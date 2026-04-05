@@ -55,7 +55,7 @@ export default function App() {
           beliefs: npc.beliefs ?? [],
           proposals: npc.proposals ?? [],
           paramChangeAccum: npc.paramChangeAccum ?? 0,
-          personality: (npc.personality && !npc.personality.includes('null')) ? npc.personality : `${npc.role}として村で暮らしている。`,
+          personality: (npc.personality && !npc.personality.includes('null') && !npc.personality.includes('として村で暮らしている')) ? npc.personality : '穏やかに村で暮らしている。',
           age: npc.age ?? (20 + Math.floor(Math.random() * 11)),
           lifespan: npc.lifespan ?? (60 + Math.floor(Math.random() * 21)),
         }));

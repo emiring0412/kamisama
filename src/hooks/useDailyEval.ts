@@ -172,14 +172,22 @@ export function useDailyEval(
           const npc = currentNPCs.find((n) => n.name === npcName);
           if (!npc) continue;
 
+          // R/SR職業は性格再生成しない（accumだけリセット）
+          if (isRRole(npc.role)) {
+            setNPCs((prev) => prev.map((n) =>
+              n.id === npc.id ? { ...n, paramChangeAccum: 0 } : n
+            ));
+            continue;
+          }
+
           // 職業変更があった場合は新しいroleを反映してから性格文を生成
           const jobChange = result.job_changes?.[npcName];
-          const currentRole = jobChange ? jobChange.to : npc.role;
-          const npcForRegen = jobChange ? { ...npc, role: currentRole } : npc;
+          const currentRole = (jobChange?.to) ? jobChange.to : npc.role;
+          const npcForRegen = (jobChange?.to) ? { ...npc, role: currentRole } : npc;
           let newPersonality = await regeneratePersonalityFront(npcForRegen, 'qwen/qwen3-32b', apiKey);
           // 失敗時フォールバック: 最低限roleと矛盾しない暫定テキストにする
           if (!newPersonality) {
-            newPersonality = `${currentRole ?? npc.role}として村で暮らしている。`;
+            newPersonality = npc.personality; // 失敗時は現在の性格文を維持
           }
           if (newPersonality) {
             setNPCs((prev) => prev.map((n) =>

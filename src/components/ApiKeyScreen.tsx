@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styles from './ApiKeyScreen.module.css';
 import AboutModal from './AboutModal';
 
@@ -13,6 +13,7 @@ export default function ApiKeyScreen({ onSubmit }: Props) {
   const [showGemini, setShowGemini] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showOfuse, setShowOfuse] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = () => {
     const trimmedGroq = groqKey.trim();
@@ -120,6 +121,50 @@ export default function ApiKeyScreen({ onSubmit }: Props) {
           <button className={styles.button} onClick={handleSubmit}>
             天岩戸を開く
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8dcc8' }}>
+            <p style={{ fontSize: '11px', color: '#9a8a70', marginBottom: '8px' }}>
+              {'\uD83D\uDCE6'} 以前のデータがある場合
+            </p>
+            <button
+              onClick={() => importRef.current?.click()}
+              style={{
+                padding: '8px 20px', border: '1px solid #d4c4b0', borderRadius: '8px',
+                background: '#f5ece0', color: '#5a4a3a', fontSize: '13px', cursor: 'pointer',
+              }}
+            >
+              {'\uD83D\uDCE5'} バックアップからインポート
+            </button>
+            <p style={{ fontSize: '10px', color: '#b0a090', marginTop: '4px' }}>
+              kamisama_backup_YYYY-MM-DD.json を選択
+            </p>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const data = JSON.parse(reader.result as string) as Record<string, string>;
+                    if (!confirm(`${Object.keys(data).length}件のデータをインポートします。よろしいですか？`)) return;
+                    for (const [key, value] of Object.entries(data)) {
+                      try { localStorage.setItem(key, value); } catch { /* ignore */ }
+                    }
+                    (window as unknown as Record<string, boolean>).__kamisama_resetting = true;
+                    window.location.reload();
+                  } catch {
+                    alert('JSONファイルの読み込みに失敗しました。');
+                  }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }}
+            />
+          </div>
         </div>
 
         <div style={{ textAlign: 'center', padding: '20px 16px', marginTop: '16px' }}>

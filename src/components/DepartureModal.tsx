@@ -30,6 +30,7 @@ export default function DepartureModal({ npc, reason, onRetain, onLetGo }: Props
               hairBackVariant={idToHairBack(npc.id)}
               hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false}
               role={npc.role}
+              rarity={npc.rarity}
               size={64}
               profile
             />

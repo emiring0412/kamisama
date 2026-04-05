@@ -81,7 +81,7 @@ export default function WhisperModal({ npcs, onSend, onClose, cooldownRemaining,
                   className={`${styles.npcBtn} ${selectedNpcId === npc.id ? styles.npcBtnActive : ''}`}
                   onClick={() => setSelectedNpcId(npc.id)}
                 >
-                  <CharacterSprite gender={npc.gender} hairColor={npc.color} clothColor={idToClothHex(npc.id)} skinColor={idToSkinHex(npc.id)} eyeColor={idToEyeHex(npc.id)} mouthColor={idToMouthHex(npc.id)} hairFrontVariant={idToHairFront(npc.id, npc.gender)} hairBackVariant={idToHairBack(npc.id)} hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false} role={npc.role} size={24} /> {npc.name}
+                  <CharacterSprite gender={npc.gender} hairColor={npc.color} clothColor={idToClothHex(npc.id)} skinColor={idToSkinHex(npc.id)} eyeColor={idToEyeHex(npc.id)} mouthColor={idToMouthHex(npc.id)} hairFrontVariant={idToHairFront(npc.id, npc.gender)} hairBackVariant={idToHairBack(npc.id)} hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false} role={npc.role} rarity={npc.rarity} size={24} /> {npc.name}
                 </button>
               ))}
             </div>

@@ -28,6 +28,7 @@ interface NPCInfo {
   color: string;
   gender?: 'male' | 'female';
   role?: string;
+  rarity?: 'N' | 'R' | 'SR';
 }
 
 interface Props {
@@ -62,6 +63,7 @@ function NpcIcon({ name, emoji, npcs, size = 16 }: { name: string; emoji: string
         hairBackVariant={idToHairBack(npc.id)}
         hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false}
         role={npc.role}
+        rarity={npc.rarity}
         size={size}
       />
     );

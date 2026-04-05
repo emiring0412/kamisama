@@ -1030,7 +1030,10 @@ export default function App() {
                     if (!other) return null;
                     return (
                       <div key={otherId} className={styles.relItem}>
-                        <span>{other.emoji} {other.name}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <CharacterSprite gender={other.gender} hairColor={other.color} clothColor={idToClothHex(other.id)} skinColor={idToSkinHex(other.id)} eyeColor={idToEyeHex(other.id)} mouthColor={idToMouthHex(other.id)} hairFrontVariant={idToHairFront(other.id, other.gender)} hairBackVariant={idToHairBack(other.id)} hasBeard={other.gender === 'male' ? idToHasBeard(other.id) : false} role={other.role} rarity={other.rarity} size={16} />
+                          {other.name}
+                        </span>
                         <span className={styles.relLabel}>{rel.label}</span>
                         <span style={{ color: rel.score >= 0 ? '#4CAF50' : '#ff6b6b' }}>
                           {rel.score > 0 ? '+' : ''}{rel.score}

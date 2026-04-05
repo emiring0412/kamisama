@@ -1,0 +1,620 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #faf6f0;
+  color: #2a1a0a;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+/* ヘッダー */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 2px solid #c41e3a;
+  background: #fff;
+}
+
+.titleArea {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.title {
+  font-size: 18px;
+  color: #c41e3a;
+  margin: 0;
+  font-weight: 700;
+}
+
+.gameClock {
+  font-size: 13px;
+  color: #8b7355;
+  font-family: monospace;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  background: #fff;
+  color: #2a1a0a;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background: #f5ece0;
+}
+
+/* メインレイアウト */
+.main {
+  display: flex;
+  padding: 16px;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.right {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ミニマップ+NPCバーラッパー */
+.mapAndNpcs {
+  display: contents; /* デスクトップではラッパー無効化 */
+}
+
+/* マップ表示切替 */
+.mapFull {
+  display: block;
+}
+
+.miniMap {
+  display: none;
+}
+
+.mapTapHint {
+  display: none;
+}
+
+/* マップ全画面オーバーレイ（横持ちレイアウト） */
+.mapOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mapOverlayContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* マップをビューポートに合わせてスケーリング（横持ち前提で横幅にフィット） */
+.mapOverlayContent > div:first-child {
+  transform-origin: center center !important;
+  margin-bottom: 0 !important;
+}
+
+.mapCloseBtn {
+  padding: 8px 24px;
+  border: 1px solid #d4c4b0;
+  border-radius: 8px;
+  background: #fff;
+  color: #c41e3a;
+  font-size: 13px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.mapRotateHint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+/* 横持ち時: マップを中央に */
+@media (orientation: landscape) and (max-height: 500px) {
+  .mapOverlay {
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  .mapCloseBtn {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    padding: 4px 16px;
+    font-size: 11px;
+  }
+
+  .mapRotateHint {
+    display: none;
+  }
+}
+
+/* NPCバー */
+.npcBar {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.npcBtn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  background: #fff;
+  color: #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, padding 0.2s;
+  flex-shrink: 0;
+}
+
+.npcBtn:hover {
+  background: #f0e4d4;
+}
+
+.npcBtnActive {
+  background: #f0e4d4;
+  border-width: 2px;
+  padding: 4px 8px;
+}
+
+.npcBtnR {
+  background: linear-gradient(135deg, #8ea4e0, #a0b4f0);
+  border-color: #4a6cf7;
+  box-shadow: 0 0 6px rgba(142, 164, 224, 0.5);
+}
+.npcBtnR:hover {
+  background: linear-gradient(135deg, #9ab0e8, #aec0f4);
+}
+.npcBtnR.npcBtnActive {
+  background: linear-gradient(135deg, #a0b8f0, #b4c8f8);
+  box-shadow: 0 0 10px rgba(142, 164, 224, 0.6);
+}
+
+.npcBtnName {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* NPC詳細パネル */
+.detailWrapper {
+  /* デスクトップ: そのまま表示 */
+}
+
+.detail {
+  background: #fff;
+  border: 1px solid #e0d4c4;
+  border-left: 3px solid;
+  border-radius: 8px;
+  padding: 12px 16px;
+  position: relative;
+}
+
+.detailR {
+  background: linear-gradient(135deg, #d0dcf8, #e0e8ff, #d0dcf8);
+  border-color: #7090e0;
+  box-shadow: 0 0 15px rgba(112, 144, 224, 0.3);
+}
+.detailR .detailName { color: #2a3a6e !important; }
+.detailR .detailRole { color: #4a5a8e; }
+.detailR .detailMood { color: #3a4a7e; background: rgba(112, 144, 224, 0.2); }
+.detailR .detailPersonality { color: #3a4a7e; }
+.detailR .paramLabel { color: #4a5a8e; }
+.detailR .paramBar { background: #b8c8f0; }
+.detailR .paramVal { color: #4a5a8e; }
+.detailR .detailCloseBtn { color: #4a5a8e; }
+
+.detailCloseBtn {
+  display: none;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detailEmoji {
+  font-size: 28px;
+}
+
+.detailName {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.detailRole {
+  font-size: 12px;
+  color: #8b7355;
+}
+
+.detailMood {
+  margin-left: auto;
+  font-size: 12px;
+  color: #aaa;
+  background: #f5ece0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.detailPersonality {
+  font-size: 12px;
+  color: #7a6a55;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.detailParams {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paramRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paramLabel {
+  font-size: 11px;
+  color: #8b7355;
+  width: 28px;
+  text-align: right;
+}
+
+.paramBar {
+  flex: 1;
+  height: 6px;
+  background: #f5ece0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.paramFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.paramVal {
+  font-size: 10px;
+  color: #9a8a70;
+  width: 20px;
+}
+
+/* AI思考状態 */
+.thinkStatus {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.savingMode {
+  font-size: 10px;
+  color: #ff9800;
+  padding: 1px 5px;
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 3px;
+}
+
+/* レート制限表示 */
+.rateLimit {
+  font-size: 12px;
+  color: #ff9800;
+  padding: 4px 10px;
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 4px;
+}
+
+/* 記憶セクション */
+.memorySection {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e0d4c4;
+}
+
+.memoryTitle {
+  font-size: 11px;
+  color: #8b7355;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.memoryItem {
+  font-size: 11px;
+  color: #8b7a66;
+  padding: 2px 0;
+  line-height: 1.4;
+}
+
+/* 関係性 */
+.relItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #7a6a55;
+  padding: 2px 0;
+}
+
+.relLabel {
+  background: #f5ece0;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.banishBtn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px;
+  border: 1px dashed #d4c4b0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b0a090;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.banishBtn:hover {
+  color: #c41e3a;
+  border-color: #c41e3a;
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c41e3a;
+  border: 1px solid #fff;
+}
+
+/* ==================== レスポンシブ（幅700px以下 or 高さ500px以下） ==================== */
+@media (max-width: 700px), (max-height: 500px) {
+  /* ヘッダー: 縦積み */
+  .header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .titleArea {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .gameClock {
+    font-size: 11px;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .thinkStatus {
+    font-size: 10px;
+  }
+
+  /* メインレイアウト: ログメイン */
+  .main {
+    flex-direction: column;
+    padding: 8px;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .left {
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* デスクトップマップ非表示、ミニマップ表示 */
+  .mapFull {
+    display: none;
+  }
+
+  .miniMap {
+    display: block;
+    width: 80px;
+    height: 60px;
+    background: #e8ddd0;
+    border: 1px solid #c4b8a0;
+    border-radius: 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .miniMapInner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .miniMapDot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.5s, top 0.5s;
+  }
+
+  .mapTapHint {
+    display: block;
+    position: absolute;
+    bottom: 1px;
+    right: 3px;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+  }
+
+  .right {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .mapAndNpcs {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  /* NPCバー: 横スクロール */
+  .npcBar {
+    flex: 1;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 3px;
+  }
+
+  .npcBtn {
+    padding: 2px 4px;
+    font-size: 12px;
+  }
+
+  /* NPC詳細: モバイルではモーダル */
+  .detailWrapper {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9997;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .detail {
+    padding: 14px 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .detailCloseBtn {
+    display: block;
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #8b7355;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .detailEmoji {
+    font-size: 22px;
+  }
+
+  .detailName {
+    font-size: 14px;
+  }
+
+  /* forceDesktopの時はモバイルスタイルを全部打ち消す */
+  .forceDesktop .header { flex-direction: row; gap: 12px; padding: 12px 20px; }
+  .forceDesktop .titleArea { flex-direction: row; align-items: baseline; gap: 12px; }
+  .forceDesktop .title { font-size: 18px; }
+  .forceDesktop .controls { flex-wrap: nowrap; justify-content: flex-end; }
+  .forceDesktop .btn { padding: 6px 14px; font-size: 13px; }
+  .forceDesktop .main { flex-direction: row; padding: 16px; gap: 16px; }
+  .forceDesktop .left { width: auto; flex-direction: column; gap: 12px; }
+  .forceDesktop .mapFull { display: block; }
+  .forceDesktop .miniMap { display: none; }
+  .forceDesktop .mapTapHint { display: none; }
+  .forceDesktop .mapAndNpcs { display: contents; }
+  .forceDesktop .right { width: auto; flex: 1; }
+  .forceDesktop .npcBar { flex: initial; flex-wrap: wrap; gap: 6px; }
+  .forceDesktop .npcBtn { padding: 4px 10px; font-size: 14px; }
+  .forceDesktop .detailWrapper { position: static; background: none; padding: 0; display: block; }
+  .forceDesktop .detail { padding: 12px 16px; max-height: none; max-width: none; }
+  .forceDesktop .detailCloseBtn { display: none; }
+}
+
+/* ==================== forceMobile（画面幅に関係なく） ==================== */
+.forceMobile .header { flex-direction: column; gap: 8px; padding: 8px 12px; }
+.forceMobile .titleArea { flex-direction: column; align-items: center; gap: 4px; }
+.forceMobile .title { font-size: 14px; }
+.forceMobile .gameClock { font-size: 11px; }
+.forceMobile .controls { flex-wrap: wrap; justify-content: center; gap: 4px; }
+.forceMobile .btn { padding: 4px 8px; font-size: 11px; }
+.forceMobile .thinkStatus { font-size: 10px; }
+.forceMobile .main { flex-direction: column; padding: 8px; gap: 4px; flex: 1; min-height: 0; overflow: hidden; }
+.forceMobile .left { flex-shrink: 0; width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.forceMobile .mapFull { display: none; }
+.forceMobile .miniMap { display: block; width: 80px; height: 60px; background: #e8ddd0; border: 1px solid #c4b8a0; border-radius: 6px; flex-shrink: 0; cursor: pointer; position: relative; overflow: hidden; }
+.forceMobile .mapTapHint { display: block; position: absolute; bottom: 1px; right: 3px; font-size: 8px; color: rgba(255,255,255,0.4); pointer-events: none; }
+.forceMobile .right { width: 100%; flex: 1; min-height: 0; }
+.forceMobile .mapAndNpcs { display: flex; flex-direction: row; gap: 6px; align-items: flex-start; }
+.forceMobile .npcBar { flex: 1; flex-wrap: wrap; align-content: flex-start; gap: 3px; }
+.forceMobile .npcBtn { padding: 2px 4px; font-size: 12px; }
+.forceMobile .detailWrapper { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9997; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.forceMobile .detail { padding: 14px 16px; max-height: 80vh; overflow-y: auto; width: 100%; max-width: 360px; }
+.forceMobile .detailCloseBtn { display: block; position: absolute; top: 8px; right: 10px; background: none; border: none; color: #8b7355; font-size: 16px; cursor: pointer; }
+.forceMobile .detailEmoji { font-size: 22px; }
+.forceMobile .detailName { font-size: 14px; }

@@ -1,0 +1,127 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border: 1px solid #e0d4c4;
+  border-radius: 12px;
+  padding: 24px;
+  width: 440px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 18px;
+  color: #c41e3a;
+  margin: 0 0 4px;
+}
+
+.desc {
+  font-size: 12px;
+  color: #8b7a66;
+  margin: 0 0 16px;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.presetBtn {
+  padding: 6px 12px;
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  background: #f5ece0;
+  color: #2a1a0a;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.presetBtn:hover { background: #efe4d4; }
+.presetBtnActive { border-color: #c41e3a; color: #c41e3a; }
+
+.preview {
+  background: #f5ece0;
+  border: 1px solid #e0d4c4;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.previewEmoji { font-size: 28px; }
+.previewName { font-size: 16px; font-weight: 700; }
+.previewRole { font-size: 11px; color: #8b7355; }
+.previewPersonality { font-size: 12px; color: #7a6a55; line-height: 1.5; margin-bottom: 10px; }
+
+.previewParams { display: flex; flex-direction: column; gap: 3px; }
+.paramRow { display: flex; align-items: center; gap: 6px; }
+.paramLabel { font-size: 10px; color: #8b7355; width: 24px; text-align: right; }
+.paramBar { flex: 1; height: 5px; background: #f5ece0; border-radius: 3px; overflow: hidden; }
+.paramFill { height: 100%; border-radius: 3px; }
+.paramVal { font-size: 9px; color: #9a8a70; width: 18px; }
+
+.noHome {
+  font-size: 11px;
+  color: #ff9800;
+  margin: 10px 0 0;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.rerollBtn {
+  padding: 8px 16px;
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  background: #f5ece0;
+  color: #2a1a0a;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.addBtn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #c41e3a, #9a1630);
+  color: #faf6f0;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.closeBtn {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8b7355;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+}

@@ -1,0 +1,506 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border: 1px solid #e0d4c4;
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* R結果時のモーダル外後光 */
+.overlayR {
+  composes: overlay;
+}
+.overlayR::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(74, 108, 247, 0.15) 30deg,
+    transparent 60deg,
+    rgba(74, 108, 247, 0.1) 90deg,
+    transparent 120deg,
+    rgba(74, 108, 247, 0.15) 150deg,
+    transparent 180deg,
+    rgba(74, 108, 247, 0.1) 210deg,
+    transparent 240deg,
+    rgba(74, 108, 247, 0.15) 270deg,
+    transparent 300deg,
+    rgba(74, 108, 247, 0.1) 330deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  animation: haloSpin 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.overlayR::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 400px; height: 400px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(74, 108, 247, 0.2), transparent 70%);
+  border-radius: 50%;
+  animation: haloPulse 2s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes haloSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes haloPulse {
+  from { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.title {
+  font-size: 18px;
+  color: #c41e3a;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.desc {
+  font-size: 12px;
+  color: #8b7a66;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.pointsBar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #8b7355;
+}
+.pointsBar strong { color: #c41e3a; }
+
+/* レート表示 */
+.rateInfo {
+  text-align: center; margin-bottom: 16px;
+  font-size: 12px; color: #8b7355;
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+}
+.rateBonus {
+  font-size: 11px; color: #3949ab; font-weight: 600;
+}
+
+/* 10連ボタン */
+.pullBtnMulti {
+  background: linear-gradient(135deg, #1a237e, #3949ab);
+}
+
+/* 10連ナビ */
+.multiNav {
+  display: flex; gap: 4px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;
+}
+.multiDot {
+  width: 24px; height: 24px; border-radius: 4px; border: 1px solid #d4c4b0;
+  background: #f5ece0; color: #8b7355; font-size: 11px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.multiDotActive { border-color: #c41e3a; color: #c41e3a; background: #fff3e0; }
+.multiDotR { color: #3949ab; border-color: #3949ab; }
+
+/* ガチャボタン */
+.pullBtn {
+  display: block; width: 100%; padding: 12px;
+  border: none; border-radius: 8px;
+  background: linear-gradient(135deg, #c41e3a, #9a1630);
+  color: #faf6f0; font-weight: 700; font-size: 15px;
+  cursor: pointer; margin-bottom: 8px; transition: opacity 0.2s;
+}
+.pullBtn:hover { opacity: 0.9; }
+.pullBtn:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+
+/* ===== 演出オーバーレイ ===== */
+.animOverlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.animBg {
+  position: absolute; inset: 0;
+  background: #000;
+  transition: background 0.4s ease;
+}
+.animBgFlash {
+  animation: flashBg 0.6s ease-in-out forwards;
+}
+@keyframes flashBg {
+  0% { opacity: 1; background: #000; }
+  40% { opacity: 1; background: #fff; }
+  100% { opacity: 1; }
+}
+
+/* 光の玉 */
+.orb {
+  position: relative; z-index: 1;
+  width: 20px; height: 20px; border-radius: 50%;
+  animation: orbGrow 1.4s ease-in-out forwards;
+}
+.orbExplode {
+  animation: orbExplode 0.4s ease-out forwards !important;
+}
+@keyframes orbGrow {
+  0% { width: 4px; height: 4px; opacity: 0.3; }
+  40% { width: 30px; height: 30px; opacity: 0.8; }
+  70% { width: 50px; height: 50px; opacity: 1; }
+  100% { width: 60px; height: 60px; opacity: 1; }
+}
+@keyframes orbExplode {
+  0% { width: 60px; height: 60px; opacity: 1; }
+  50% { width: 300px; height: 300px; opacity: 0.8; }
+  100% { width: 600px; height: 600px; opacity: 0; }
+}
+
+/* レアリティ表示 */
+.animRarity {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInUp 0.4s ease-out;
+}
+.animRarityText {
+  font-size: 72px; font-weight: 900;
+  text-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+  animation: rarityPulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes rarityPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+/* シルエット */
+.animSilhouette {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInUp 0.5s ease-out;
+}
+.silhouetteWrap {
+  filter: brightness(0) contrast(0) drop-shadow(0 0 20px rgba(255,255,255,0.3));
+  animation: silhouettePulse 1s ease-in-out infinite alternate;
+}
+@keyframes silhouettePulse {
+  from { filter: brightness(0) drop-shadow(0 0 20px rgba(255,255,255,0.3)); }
+  to { filter: brightness(0) drop-shadow(0 0 40px rgba(255,255,255,0.6)); }
+}
+
+.animSkipHint {
+  position: absolute; bottom: 40px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.4); font-size: 12px;
+  animation: blink 1.5s ease-in-out infinite;
+}
+/* ===== 10連グリッド ===== */
+.multiGrid {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+  width: 320px;
+}
+.gridCell {
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.gridCellLit {
+  animation: cellPop 0.3s ease-out;
+}
+@keyframes cellPop {
+  0% { transform: scale(0.3); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.gridOrb {
+  width: 30px; height: 30px; border-radius: 50%;
+  transition: opacity 0.15s;
+}
+.gridOrbR {
+  animation: orbFloat 1.8s ease-in-out infinite alternate;
+}
+@keyframes orbFloat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(0.95); }
+}
+
+/* 10連サマリー: シルエット一覧 */
+.summaryWrap {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  animation: fadeInUp 0.4s ease-out;
+}
+.silhouetteGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+.silhouetteCell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: cellPop 0.4s ease-out backwards;
+}
+.silhouetteCell:nth-child(1) { animation-delay: 0s; }
+.silhouetteCell:nth-child(2) { animation-delay: 0.05s; }
+.silhouetteCell:nth-child(3) { animation-delay: 0.1s; }
+.silhouetteCell:nth-child(4) { animation-delay: 0.15s; }
+.silhouetteCell:nth-child(5) { animation-delay: 0.2s; }
+.silhouetteCell:nth-child(6) { animation-delay: 0.25s; }
+.silhouetteCell:nth-child(7) { animation-delay: 0.3s; }
+.silhouetteCell:nth-child(8) { animation-delay: 0.35s; }
+.silhouetteCell:nth-child(9) { animation-delay: 0.4s; }
+.silhouetteCell:nth-child(10) { animation-delay: 0.45s; }
+.silhouetteCellR {
+  filter: drop-shadow(0 0 8px rgba(123, 160, 255, 0.6));
+}
+.silhouetteFigure {
+  filter: brightness(0) contrast(0) drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+
+/* サマリー: 玉→シルエットに変化 */
+.revealedSilhouette {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: silReveal 0.5s ease-out;
+}
+.revealedSilhouetteR .silhouetteFigure {
+  filter: brightness(0) contrast(0) drop-shadow(0 0 15px rgba(123, 160, 255, 0.5));
+}
+.revealedSilhouetteR {
+  animation: silReveal 0.5s ease-out, orbFloat 1.8s ease-in-out 0.5s infinite alternate;
+}
+@keyframes silReveal {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.silhouetteCellR .silhouetteFigure {
+  filter: brightness(0) drop-shadow(0 0 15px rgba(123, 160, 255, 0.5));
+}
+.silhouetteRarity {
+  font-size: 11px; font-weight: 700;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* ===== キラキラ ===== */
+.sparklesContainer {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2;
+}
+.sparkle {
+  position: absolute; border-radius: 50%;
+  animation: sparkleAnim 0.8s ease-out forwards;
+  opacity: 0;
+}
+@keyframes sparkleAnim {
+  0% { opacity: 0; transform: scale(0) rotate(0deg); }
+  30% { opacity: 1; transform: scale(1.2) rotate(90deg); }
+  60% { opacity: 0.8; transform: scale(0.8) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0) rotate(360deg); }
+}
+
+/* ===== 結果カード（公開後） ===== */
+.revealContainer {
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+.resultRarity {
+  text-align: center; font-size: 14px; font-weight: 700;
+  margin-bottom: 8px; padding: 6px 0; border-radius: 4px;
+}
+.rarityN { background: #f0ebe4; color: #8b7355; }
+.rarityR {
+  background: linear-gradient(135deg, #1a237e, #3949ab); color: #e8eaf6;
+}
+.raritySR {
+  background: linear-gradient(135deg, #bf8a30, #d4af37); color: #fff;
+}
+
+.resultCard {
+  background: #f5ece0; border: 1px solid #e0d4c4;
+  border-radius: 8px; padding: 16px;
+  position: relative;
+}
+.resultCardR {
+  background: linear-gradient(135deg, #d0dcf8, #e0e8ff, #d0dcf8);
+  border-color: #7090e0;
+  box-shadow: 0 0 20px rgba(112, 144, 224, 0.4), 0 0 60px rgba(112, 144, 224, 0.15);
+}
+.resultCardR .resultName { color: #2a3a6e; }
+.resultCardR .resultRole { color: #4a5a8e; }
+.resultCardR .resultPersonality { color: #3a4a7e; }
+.resultCardR .paramLabel { color: #4a5a8e; }
+.resultCardR .paramBar { background: #b8c8f0; }
+.resultCardR .paramVal { color: #4a5a8e; }
+.resultCardBounce {
+  animation: cardBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes cardBounce {
+  0% { transform: scale(0.3) translateY(40px); opacity: 0; }
+  60% { transform: scale(1.05) translateY(-8px); opacity: 1; }
+  80% { transform: scale(0.97) translateY(3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.resultHeader {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.resultName { font-size: 16px; font-weight: 700; color: #2a1a0a; }
+.resultRole { font-size: 11px; color: #8b7355; }
+.resultPersonality { font-size: 12px; color: #7a6a55; line-height: 1.5; margin-bottom: 10px; }
+
+.resultParams { display: flex; flex-direction: column; gap: 3px; }
+.paramRow { display: flex; align-items: center; gap: 6px; }
+.paramLabel { font-size: 10px; color: #8b7355; width: 24px; text-align: right; }
+.paramBar { flex: 1; height: 5px; background: #e8e0d4; border-radius: 3px; overflow: hidden; }
+.paramFill { height: 100%; border-radius: 3px; }
+.paramVal { font-size: 9px; color: #9a8a70; width: 18px; }
+
+.actions {
+  display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+}
+
+.addBtn {
+  padding: 8px 20px; border: none; border-radius: 6px;
+  background: linear-gradient(135deg, #c41e3a, #9a1630);
+  color: #faf6f0; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.skipBtn {
+  padding: 8px 16px; border: 1px solid #d4c4b0; border-radius: 6px;
+  background: #f5ece0; color: #2a1a0a; font-size: 13px; cursor: pointer;
+}
+/* 説明セクション */
+.infoSection {
+  margin-top: 16px;
+  padding: 12px;
+  background: #faf5ed;
+  border: 1px solid #e8dcc8;
+  border-radius: 8px;
+}
+.infoTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8b7355;
+  margin-bottom: 8px;
+}
+.infoTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+.infoTable td {
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #5a4a3a;
+  vertical-align: top;
+  border-bottom: 1px solid #e8dcc8;
+}
+.infoTable tr:last-child td { border-bottom: none; }
+.infoRarityN {
+  font-weight: 700;
+  color: #8b7355;
+  width: 28px;
+  text-align: center;
+}
+.infoRarityR {
+  font-weight: 700;
+  color: #4a6cf7;
+  width: 28px;
+  text-align: center;
+}
+.infoRaritySR {
+  font-weight: 700;
+  color: #d4af37;
+  width: 28px;
+  text-align: center;
+}
+.infoNote {
+  font-size: 11px;
+  color: #9a8a70;
+  line-height: 1.5;
+}
+
+/* R一覧 */
+.rList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rEntry {
+  padding: 8px;
+  background: #f0f0fa;
+  border: 1px solid #d8d8f0;
+  border-radius: 6px;
+}
+.rEntryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.rEntryLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3a4a8e;
+}
+.rEntryRole {
+  font-size: 10px;
+  color: #7080b0;
+  background: #e8e8f8;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.rEntryPersonality {
+  font-size: 11px;
+  color: #5a5a7a;
+  line-height: 1.4;
+}
+
+.closeBtn {
+  display: block; width: 100%; padding: 8px;
+  border: 1px solid #d4c4b0; border-radius: 6px;
+  background: transparent; color: #8b7355; font-size: 12px;
+  cursor: pointer; margin-top: 8px;
+}
+
+/* 共通アニメ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,449 @@
+.panel {
+  background: #f5ece0;
+  border: 1px solid #e0d4c4;
+  border-radius: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* タブ */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e0d4c4;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: #9a8a70;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: #8b7355;
+}
+
+.tabActive {
+  color: #c41e3a;
+  border-bottom-color: #c41e3a;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  color: #a09080;
+  line-height: 1.8;
+}
+
+.entry {
+  padding: 8px 12px;
+  border-left: 3px solid #d4c4b0;
+  margin-bottom: 6px;
+  border-radius: 0 4px 4px 0;
+  background: rgba(255, 255, 255, 0.02);
+  animation: slideIn 0.3s ease;
+}
+
+.header {
+  font-size: 12px;
+  color: #3a2a1a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time {
+  color: #9a8a70;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.sourceTag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.target {
+  color: #8b7355;
+}
+
+/* 会話ラリー（1行ずつ） */
+.conversation {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.convLine {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.convWho {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.convSay {
+  color: #c41e3a;
+}
+
+/* 単発セリフ（すれ違い等） */
+.say {
+  font-size: 12px;
+  color: #c41e3a;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.think {
+  font-size: 11px;
+  color: #8b7a66;
+  margin-top: 2px;
+}
+
+.action {
+  font-size: 11px;
+  color: #7a6a55;
+  margin-top: 2px;
+}
+
+/* 最新へボタン */
+.scrollBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  border: 1px solid #d4c4b0;
+  border-radius: 16px;
+  background: #f5ece0;
+  color: #c41e3a;
+  font-size: 11px;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: background 0.2s;
+}
+
+.scrollBtn:hover {
+  background: #efe4d4;
+}
+
+/* NPCフィルタ */
+.npcFilter {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #e0d4c4;
+  flex-shrink: 0;
+}
+
+.filterBtn {
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #8b7355;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filterBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filterBtnActive {
+  background: rgba(255, 255, 255, 0.08);
+  color: #2a1a0a;
+  border-color: #c41e3a;
+}
+
+/* 歴史タブ */
+.historySection {
+  margin-bottom: 16px;
+}
+
+.historyLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c41e3a;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0d4c4;
+}
+
+.eraCard {
+  padding: 10px 12px;
+  border-left: 3px solid #9C27B0;
+  margin-bottom: 8px;
+  border-radius: 0 6px 6px 0;
+  background: rgba(156, 39, 176, 0.05);
+}
+
+.eraName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2a1a0a;
+  margin-bottom: 4px;
+}
+
+.eraSummary {
+  font-size: 12px;
+  color: #7a6a55;
+  line-height: 1.6;
+}
+
+.historyItem {
+  font-size: 12px;
+  color: #8b7355;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  line-height: 1.5;
+}
+
+.civItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.civStatus {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.civName {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2a1a0a;
+}
+
+.civDesc {
+  font-size: 11px;
+  color: #8b7a66;
+  margin-top: 1px;
+}
+
+/* アコーディオンヘッダー */
+.accordionHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c41e3a;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0d4c4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.accordionHeader:hover {
+  color: #f0e068;
+}
+
+/* 図鑑カテゴリフィルタ */
+.civFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 0 10px;
+}
+
+.civFilterBtn {
+  padding: 3px 8px;
+  border: 1px solid #e0d4c4;
+  border-radius: 12px;
+  background: transparent;
+  color: #8b7355;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.civFilterBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #5a4a30;
+}
+
+.civFilterBtnActive {
+  background: rgba(232, 212, 77, 0.12);
+  color: #c41e3a;
+  border-color: #c41e3a;
+}
+
+/* 図鑑グリッド */
+.encyclopediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 4px;
+}
+
+.encyclopediaCard {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #e0d4c4;
+  border-radius: 8px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.encyclopediaCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #d4c4b0;
+}
+
+.encyclopediaCardNew {
+  border-color: rgba(232, 212, 77, 0.3);
+}
+
+.newBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #f5ece0;
+  background: #c41e3a;
+  padding: 1px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.civFilterNew {
+  border-color: rgba(232, 212, 77, 0.4);
+  color: #c41e3a;
+}
+
+.encyclopediaIcon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.encyclopediaName {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2a1a0a;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.encyclopediaCategory {
+  font-size: 9px;
+  color: #c41e3a;
+  background: rgba(232, 212, 77, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.encyclopediaDesc {
+  font-size: 10px;
+  color: #8b7355;
+  line-height: 1.4;
+}
+
+.encyclopediaMeta {
+  font-size: 9px;
+  color: #a09080;
+  margin-top: auto;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* レスポンシブ */
+@media (max-width: 700px) {
+  .npcFilter {
+    gap: 1px;
+    padding: 3px 4px;
+  }
+
+  .filterBtn {
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 6px 2px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .encyclopediaGrid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+  }
+
+  .encyclopediaCard {
+    padding: 8px 6px;
+  }
+
+  .encyclopediaIcon {
+    font-size: 20px;
+  }
+
+  .entry {
+    padding: 6px 8px;
+  }
+
+  .header {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .convSay {
+    font-size: 11px;
+  }
+}

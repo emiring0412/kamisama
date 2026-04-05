@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { NPC, NPCParams } from '../types';
 import { MAP_WIDTH, MAP_HEIGHT, FACILITIES } from '../lib/constants';
-import { SINGLE_COST, MULTI_COST, MULTI_COUNT, getRRate, R_TEMPLATES, jitterRParams } from '../lib/gachaData';
+import { SINGLE_COST, MULTI_COST, MULTI_COUNT, getRRate, getSRRate, R_TEMPLATES, SR_TEMPLATES, jitterRParams } from '../lib/gachaData';
 import type { RTemplate } from '../lib/gachaData';
 import { randomAge, randomLifespan } from '../lib/lifespanSystem';
 import CharacterSprite from './CharacterSprite';
@@ -76,7 +76,7 @@ function buildNPC(gender: 'male' | 'female', role: string, personality: string, 
 const PARAM_COLORS: Record<string, string> = { logic: '#42a5f5', creativity: '#ab47bc', morality: '#66bb6a', empathy: '#ff7043', ambition: '#ffa726', sociability: '#ec407a' };
 const PARAM_LABELS: Record<string, string> = { logic: '論理', creativity: '創造', morality: '道徳', empathy: '共感', ambition: '野心', sociability: '社交' };
 
-type GachaResult = { npc: NPC; rarity: 'N' | 'R'; template?: RTemplate };
+type GachaResult = { npc: NPC; rarity: 'N' | 'R' | 'SR'; template?: RTemplate };
 
 // 単発演出フェーズ
 type SinglePhase = 'idle' | 'blackout' | 'orb' | 'flash' | 'rarity' | 'silhouette' | 'reveal';
@@ -135,11 +135,21 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
 
   // 1体分の抽選
   const rollOne = (isMulti: boolean): GachaResult => {
-    const isR = Math.random() < getRRate(isMulti);
-    if (isR) {
+    // SR判定（SR_TEMPLATESが空なら出ない）
+    if (SR_TEMPLATES.length > 0 && Math.random() < getSRRate(isMulti)) {
+      const tmpl = randomFrom(SR_TEMPLATES);
+      const g = tmpl.genderLock ?? (Math.random() < 0.5 ? 'male' : 'female');
+      const npc = buildNPC(g, tmpl.role, tmpl.personality, jitterRParams(tmpl.params), existingNames);
+      npc.rarity = 'SR';
+      return { npc, rarity: 'SR', template: tmpl };
+    }
+    // R判定
+    if (Math.random() < getRRate(isMulti)) {
       const tmpl = randomFrom(R_TEMPLATES);
       const g = tmpl.genderLock ?? (Math.random() < 0.5 ? 'male' : 'female');
-      return { npc: buildNPC(g, tmpl.role, tmpl.personality, jitterRParams(tmpl.params), existingNames), rarity: 'R', template: tmpl };
+      const npc = buildNPC(g, tmpl.role, tmpl.personality, jitterRParams(tmpl.params), existingNames);
+      npc.rarity = 'R';
+      return { npc, rarity: 'R', template: tmpl };
     }
     const g = Math.random() < 0.5 ? 'male' : 'female';
     const p = randomFrom(N_PRESETS);
@@ -197,6 +207,15 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
     if (!canMulti) return;
     onSpendPoints(MULTI_COST);
     const batch = Array.from({ length: MULTI_COUNT }, () => rollOne(true));
+    // デバッグ: 10連にSRが無ければ1枠をSR確定にする
+    if (SR_TEMPLATES.length > 0 && !batch.some((r) => r.rarity === 'SR')) {
+      const idx = Math.floor(Math.random() * MULTI_COUNT);
+      const tmpl = randomFrom(SR_TEMPLATES);
+      const g = tmpl.genderLock ?? (Math.random() < 0.5 ? 'male' : 'female');
+      const npc = buildNPC(g, tmpl.role, tmpl.personality, jitterRParams(tmpl.params), existingNames);
+      npc.rarity = 'SR';
+      batch[idx] = { npc, rarity: 'SR', template: tmpl };
+    }
     setMultiResults(batch);
     setLitCount(0);
     setRevealIndex(-1);
@@ -269,8 +288,8 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
   };
 
   // レアリティカラー
-  const orbColor = (rarity: 'N' | 'R') => rarity === 'R' ? '#4a6cf7' : '#e8dcc8';
-  const orbGlow = (rarity: 'N' | 'R') => rarity === 'R' ? '#4a6cf7' : '#fff8e8';
+  const orbColor = (rarity: 'N' | 'R' | 'SR') => rarity === 'SR' ? '#9c27b0' : rarity === 'R' ? '#4a6cf7' : '#e8dcc8';
+  const orbGlow = (rarity: 'N' | 'R' | 'SR') => rarity === 'SR' ? '#ce93d8' : rarity === 'R' ? '#4a6cf7' : '#fff8e8';
 
   const renderParams = (params: NPCParams) => (
     <div className={styles.resultParams}>
@@ -297,7 +316,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
       hairFrontVariant={idToHairFront(npc.id, npc.gender)}
       hairBackVariant={idToHairBack(npc.id)}
       hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false}
-      role={npc.role} size={size} profile={true}
+      role={npc.role} rarity={npc.rarity} size={size} profile={true}
     />
   );
 
@@ -315,8 +334,8 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
         )}
         {singlePhase === 'rarity' && pendingSingle && (
           <div className={styles.animRarity}>
-            <div className={styles.animRarityText} style={{ color: pendingSingle.rarity === 'R' ? '#4a6cf7' : '#c8b896' }}>
-              {pendingSingle.rarity === 'R' ? 'R' : 'N'}
+            <div className={styles.animRarityText} style={{ color: pendingSingle.rarity === 'SR' ? '#ce93d8' : pendingSingle.rarity === 'R' ? '#4a6cf7' : '#c8b896' }}>
+              {pendingSingle.rarity}
             </div>
             <Sparkles color={rc} />
           </div>
@@ -352,7 +371,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
               return (
                 <div key={i} className={`${styles.gridCell} ${lit ? styles.gridCellLit : ''}`}>
                   <div
-                    className={`${styles.gridOrb} ${lit && r.rarity === 'R' ? styles.gridOrbR : ''}`}
+                    className={`${styles.gridOrb} ${lit && (r.rarity === 'SR' ? styles.gridOrbSR : r.rarity === 'R' ? styles.gridOrbR : '')}`}
                     style={lit ? {
                       background: `radial-gradient(circle, ${color}, transparent)`,
                       boxShadow: `0 0 15px ${glow}, 0 0 30px ${glow}`,
@@ -378,7 +397,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
                 return (
                   <div key={i} className={`${styles.silhouetteCell} ${r.rarity === 'R' ? styles.silhouetteCellR : ''}`}>
                     {revealed ? (
-                      <div className={`${styles.revealedSilhouette} ${r.rarity === 'R' ? styles.revealedSilhouetteR : ''}`}>
+                      <div className={`${styles.revealedSilhouette} ${r.rarity === 'SR' ? styles.revealedSilhouetteSR : r.rarity === 'R' ? styles.revealedSilhouetteR : ''}`}>
                         <div className={styles.silhouetteFigure}>
                           {renderSprite(r.npc, 48, true)}
                         </div>
@@ -387,7 +406,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
                         </div>
                       </div>
                     ) : (
-                      <div className={`${styles.gridOrb} ${r.rarity === 'R' ? styles.gridOrbR : ''}`} style={{
+                      <div className={`${styles.gridOrb} ${r.rarity === 'SR' ? styles.gridOrbSR : r.rarity === 'R' ? styles.gridOrbR : ''}`} style={{
                         background: `radial-gradient(circle, ${color}, transparent)`,
                         boxShadow: `0 0 15px ${glow}, 0 0 30px ${glow}`,
                         opacity: 1, width: 30, height: 30,
@@ -419,7 +438,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
             <div className={styles.multiNav}>
               {results.map((r, i) => (
                 <button key={r.npc.id}
-                  className={`${styles.multiDot} ${i === viewIndex ? styles.multiDotActive : ''} ${r.rarity === 'R' ? styles.multiDotR : ''}`}
+                  className={`${styles.multiDot} ${i === viewIndex ? styles.multiDotActive : ''} ${r.rarity === 'SR' ? styles.multiDotSR : r.rarity === 'R' ? styles.multiDotR : ''}`}
                   onClick={() => setViewIndex(i)}
                 >{i + 1}</button>
               ))}
@@ -428,11 +447,11 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
 
           <Sparkles color={cur.rarity === 'R' ? '#4a6cf7' : '#f0e6d0'} />
 
-          <div className={`${styles.resultRarity} ${cur.rarity === 'R' ? styles.rarityR : styles.rarityN}`}>
-            {cur.rarity === 'R' ? `\u2B50 R \u2014 ${cur.template?.label}` : 'N \u2014 通常住民'}
+          <div className={`${styles.resultRarity} ${cur.rarity === 'SR' ? styles.raritySR : cur.rarity === 'R' ? styles.rarityR : styles.rarityN}`}>
+            {cur.rarity === 'SR' ? `\u2728 SR \u2014 ${cur.template?.label}` : cur.rarity === 'R' ? `\u2B50 R \u2014 ${cur.template?.label}` : 'N \u2014 通常住民'}
           </div>
 
-          <div className={`${styles.resultCard} ${cur.rarity === 'R' ? styles.resultCardR : ''} ${styles.resultCardBounce}`}>
+          <div className={`${styles.resultCard} ${cur.rarity === 'SR' ? styles.resultCardSR : cur.rarity === 'R' ? styles.resultCardR : ''} ${styles.resultCardBounce}`}>
             <div className={styles.resultHeader}>
               {renderSprite(cur.npc, 64)}
               <div>
@@ -466,8 +485,8 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
           <span>{'\u2B50'} 物理P: <strong>{physicalPoints}</strong></span>
         </div>
         <div className={styles.rateInfo}>
-          <span>N: 70% / R: 30%</span>
-          <span className={styles.rateBonus}>10連はR率 +3%</span>
+          <span>{SR_TEMPLATES.length > 0 ? 'N: 67% / R: 30% / SR: 3%' : 'N: 70% / R: 30%'}</span>
+          <span className={styles.rateBonus}>10連はR率{SR_TEMPLATES.length > 0 ? '・SR率' : ''} +3%</span>
         </div>
 
         <button className={styles.pullBtn} disabled={!canSingle} onClick={pullSingle}>
@@ -497,7 +516,13 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
             </tbody>
           </table>
           <div className={styles.infoNote}>
-            {'\u2728'} 現在はN・Rのみ排出されます。SRが出現する特別な期間が訪れることがあります。
+            {SR_TEMPLATES.length > 0
+              ? <>
+                  {'\u2728'} <strong>4/8終日まで10連でSR1体確定！</strong><br/>
+                  SR率: 単発{Math.round(getSRRate(false) * 100)}% / 10連{Math.round(getSRRate(true) * 100)}%<br/>
+                  現在排出中SR: {SR_TEMPLATES.map((t) => t.label).join('、')}
+                </>
+              : '\u2728 現在はN・Rのみ排出されます。SRが出現する特別な期間が訪れることがあります。'}
           </div>
         </div>
 

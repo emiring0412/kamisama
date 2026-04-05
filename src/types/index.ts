@@ -64,6 +64,7 @@ export interface NPC {
   isWaiting: boolean;
   whisperMoving?: boolean;       // ささやきによる移動中フラグ
   whisperTask?: string;          // 到着後にやるべきこと
+  rarity?: 'N' | 'R' | 'SR';    // ガチャレアリティ
 }
 
 // 村の歴史: 過去の時代

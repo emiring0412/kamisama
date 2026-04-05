@@ -934,12 +934,12 @@ export default function App() {
             {npcs.map((npc) => (
               <button
                 key={npc.id}
-                className={`${styles.npcBtn} ${npc.id === selectedNPCId ? styles.npcBtnActive : ''} ${isRRole(npc.role) ? styles.npcBtnR : ''}`}
+                className={`${styles.npcBtn} ${npc.id === selectedNPCId ? styles.npcBtnActive : ''} ${npc.rarity === 'SR' ? styles.npcBtnSR : isRRole(npc.role) ? styles.npcBtnR : ''}`}
                 onClick={() => setSelectedNPCId(npc.id === selectedNPCId ? null : npc.id)}
-                style={{ borderColor: isRRole(npc.role) ? '#4a6cf7' : npc.color }}
+                style={{ borderColor: npc.rarity === 'SR' ? '#9c27b0' : isRRole(npc.role) ? '#4a6cf7' : npc.color }}
                 title={`${npc.name}（${npc.role}）${npc.age ? ` ${npc.age}歳` : ''}`}
               >
-                <CharacterSprite gender={npc.gender} hairColor={npc.color} clothColor={idToClothHex(npc.id)} skinColor={idToSkinHex(npc.id)} eyeColor={idToEyeHex(npc.id)} mouthColor={idToMouthHex(npc.id)} hairFrontVariant={idToHairFront(npc.id, npc.gender)} hairBackVariant={idToHairBack(npc.id)} hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false} role={npc.role} size={22} />
+                <CharacterSprite gender={npc.gender} hairColor={npc.color} clothColor={idToClothHex(npc.id)} skinColor={idToSkinHex(npc.id)} eyeColor={idToEyeHex(npc.id)} mouthColor={idToMouthHex(npc.id)} hairFrontVariant={idToHairFront(npc.id, npc.gender)} hairBackVariant={idToHairBack(npc.id)} hasBeard={npc.gender === 'male' ? idToHasBeard(npc.id) : false} role={npc.role} rarity={npc.rarity} size={22} />
                 {npc.id === selectedNPCId && <span className={styles.npcBtnName}>{npc.name}</span>}
               </button>
             ))}
@@ -970,7 +970,7 @@ export default function App() {
             <div className={styles.detailWrapper} onClick={(e) => {
               if (e.target === e.currentTarget) setSelectedNPCId(null);
             }}>
-            <div className={`${styles.detail} ${isRRole(selectedNPC.role) ? styles.detailR : ''}`} style={{ borderLeftColor: isRRole(selectedNPC.role) ? '#4a6cf7' : selectedNPC.color }}>
+            <div className={`${styles.detail} ${selectedNPC.rarity === 'SR' ? styles.detailSR : isRRole(selectedNPC.role) ? styles.detailR : ''}`} style={{ borderLeftColor: selectedNPC.rarity === 'SR' ? '#9c27b0' : isRRole(selectedNPC.role) ? '#4a6cf7' : selectedNPC.color }}>
               <button className={styles.detailCloseBtn} onClick={() => setSelectedNPCId(null)}>{'\u2715'}</button>
               <div className={styles.detailHeader}>
                 <CharacterSprite
@@ -984,6 +984,7 @@ export default function App() {
                   hairBackVariant={idToHairBack(selectedNPC.id)}
                   hasBeard={selectedNPC.gender === 'male' ? idToHasBeard(selectedNPC.id) : false}
                   role={selectedNPC.role}
+                  rarity={selectedNPC.rarity}
                   size={96}
                   profile
                 />

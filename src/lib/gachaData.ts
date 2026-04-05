@@ -8,10 +8,15 @@ export const MULTI_COUNT = 10;
 // ===== 排出率 =====
 export const R_RATE = 0.30;          // 単発R率 30%
 export const R_RATE_MULTI_BONUS = 0.03; // 10連ボーナス +3%
-// SR率は将来イベント時に追加
+export const SR_RATE = 0.03;         // SR率 3%
+export const SR_RATE_MULTI_BONUS = 0.03; // 10連ボーナス +3%
 
 export function getRRate(isMulti: boolean): number {
   return isMulti ? R_RATE + R_RATE_MULTI_BONUS : R_RATE;
+}
+
+export function getSRRate(isMulti: boolean): number {
+  return isMulti ? SR_RATE + SR_RATE_MULTI_BONUS : SR_RATE;
 }
 
 // ===== Rキャラ定義 =====
@@ -64,12 +69,6 @@ export const R_TEMPLATES: RTemplate[] = [
     genderLock: 'male',
   },
   {
-    label: '呪術師',
-    role: '呪術師',
-    personality: '禁忌の知識を求め続ける。村人には恐れられているが、その力は本物。',
-    params: { logic: 30, creativity: 35, morality: 0, empathy: 0, ambition: 30, sociability: 5 },
-  },
-  {
     label: '慈母の薬師',
     role: '大薬師',
     personality: '全ての命を等しく救おうとする。自分の身を顧みない献身の人。',
@@ -91,11 +90,36 @@ export const R_TEMPLATES: RTemplate[] = [
     genderLock: 'female',
   },
   {
+    label: '呪術師',
+    role: '呪術師',
+    personality: '禁忌の知識を求め続ける。村人には恐れられているが、その力は本物。',
+    params: { logic: 30, creativity: 35, morality: 0, empathy: 0, ambition: 30, sociability: 5 },
+  },
+  {
+    label: '踊り子',
+    role: '舞踏家',
+    personality: '踊りで人を魅了する。華やかだが、その笑顔の裏に孤独を隠す。',
+    params: { logic: 0, creativity: 35, morality: 10, empathy: 20, ambition: 5, sociability: 30 },
+    genderLock: 'female',
+  },
+  {
     label: '鬼鍛冶',
     role: '刀鍛冶',
     personality: '炎の中に美を見出す狂気の職人。作品のためなら全てを犠牲にする。',
     params: { logic: 20, creativity: 45, morality: 10, empathy: 0, ambition: 20, sociability: 5 },
     genderLock: 'male',
+  },
+];
+
+// ===== SRキャラ定義 =====
+
+export const SR_TEMPLATES: RTemplate[] = [
+  {
+    label: '呪術師',
+    role: '呪術師',
+    personality: '禁忌の知識を求め続ける。村人には恐れられているが、その力は本物。',
+    params: { logic: 30, creativity: 35, morality: 0, empathy: 0, ambition: 30, sociability: 5 },
+    genderLock: 'female',
   },
   {
     label: '踊り子',
@@ -106,10 +130,14 @@ export const R_TEMPLATES: RTemplate[] = [
   },
 ];
 
-// R職業判定
+// R/SR職業判定
 const R_ROLES = new Set(R_TEMPLATES.map((t) => t.role));
+const SR_ROLES = new Set(SR_TEMPLATES.map((t) => t.role));
 export function isRRole(role: string): boolean {
-  return R_ROLES.has(role);
+  return R_ROLES.has(role) || SR_ROLES.has(role);
+}
+export function isSRRole(role: string): boolean {
+  return SR_ROLES.has(role);
 }
 
 // パラメータ正規化（合計100にする）

@@ -13,10 +13,11 @@ interface Props {
   hairBackVariant?: string;
   hasBeard?: boolean;
   role?: string;
+  rarity?: 'N' | 'R' | 'SR';
 }
 
-type ColorType = 'hair' | 'cloth' | 'skin' | 'eye' | 'mouth' | 'beard';
-type LayerDef = { file: string; color: ColorType | null };
+type ColorType = 'hair' | 'cloth' | 'skin' | 'eye' | 'mouth' | 'beard' | 'veil';
+type LayerDef = { file: string; color: ColorType | null; opacity?: number };
 
 // 職業装飾の定義
 // position: 'over_cloth'(服の上) or 'top'(最前面)
@@ -40,6 +41,41 @@ const JOB_LAYERS: Record<string, JobLayerDef[]> = {
   '僧侶': [
     { file: 'job/job_priest_robe', color: 'cloth', position: 'over_cloth' },
     { file: 'job/job_priest_necklace', color: null, position: 'top' },
+  ],
+};
+
+// SR職業: 全パーツを専用素材で置き換える
+// 戻り値がnullなら通常レンダリングにフォールバック
+function buildSRLayers(profile: boolean, role?: string, rarity?: string): LayerDef[] | null {
+  if (rarity !== 'SR' || !role) return null;
+  const p = profile ? '_p' : '';
+  const sr = SR_FULL_LAYERS[role];
+  if (!sr) return null;
+  return sr.map((layer) => ({
+    file: `${layer.file}${p}`,
+    color: layer.color,
+    opacity: layer.opacity,
+  }));
+}
+
+// SR職業のフルレイヤー定義（下から上の順）
+const SR_FULL_LAYERS: Record<string, LayerDef[]> = {
+  '呪術師': [
+    { file: 'job/sr_jujutsushi_hair_back', color: 'hair' },
+    { file: 'job/sr_jujutsushi_body', color: 'skin' },
+    { file: 'job/sr_jujutsushi_cloth', color: 'cloth' },
+    { file: 'job/sr_jujutsushi_face', color: null },
+    { file: 'job/sr_jujutsushi_hair_front', color: 'hair' },
+    { file: 'job/sr_jujutsushi_veil', color: 'veil', opacity: 0.7 },
+  ],
+  '舞踏家': [
+    { file: 'job/sr_butouka_hair_back', color: 'hair' },
+    { file: 'job/sr_butouka_body', color: 'skin' },
+    { file: 'job/sr_butouka_cloth', color: 'cloth' },
+    { file: 'job/sr_butouka_face', color: null },
+    { file: 'job/sr_butouka_hair_front', color: 'hair' },
+    { file: 'job/sr_butouka_accessory', color: 'cloth' },
+    { file: 'job/sr_butouka_highlight', color: null },
   ],
 };
 
@@ -131,9 +167,12 @@ function CharacterSpriteInner(props: Props) {
   const hf = props.hairFrontVariant || '01';
   const hb = props.hairBackVariant || '01';
 
-  const layers = props.gender === 'female'
-    ? buildLayersFemale(hf, hb, !!props.profile, props.role)
-    : buildLayersMale(hf, !!props.hasBeard, !!props.profile, props.role);
+  // SR職業は専用レイヤーを使う
+  const srLayers = buildSRLayers(!!props.profile, props.role, props.rarity);
+  const layers = srLayers
+    ?? (props.gender === 'female'
+      ? buildLayersFemale(hf, hb, !!props.profile, props.role)
+      : buildLayersMale(hf, !!props.hasBeard, !!props.profile, props.role));
 
   const colorFilters: Record<string, string> = {
     hair: colorToFilter(props.hairColor, 0.7),
@@ -142,6 +181,7 @@ function CharacterSpriteInner(props: Props) {
     eye: colorToFilter(props.eyeColor || '#4A3728'),
     mouth: colorToFilter(props.mouthColor || '#E08080'),
     beard: colorToFilter(props.hairColor, 0.6),
+    veil: colorToFilter('#6A1B9A', 0.8), // 濃い紫
   };
 
   return (
@@ -162,6 +202,7 @@ function CharacterSpriteInner(props: Props) {
             top: 0,
             left: 0,
             filter: layer.color ? colorFilters[layer.color] : undefined,
+            opacity: layer.opacity ?? 1,
           }}
           alt=""
           onError={(e) => { const el = e.target as HTMLImageElement; el.style.width = '0'; el.style.height = '0'; }}

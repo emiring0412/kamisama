@@ -206,6 +206,19 @@
   box-shadow: 0 0 10px rgba(142, 164, 224, 0.6);
 }
 
+.npcBtnSR {
+  background: linear-gradient(135deg, #d0a0e0, #e0b4f0);
+  border-color: #9c27b0;
+  box-shadow: 0 0 6px rgba(156, 39, 176, 0.4);
+}
+.npcBtnSR:hover {
+  background: linear-gradient(135deg, #d8b0e8, #e8c0f4);
+}
+.npcBtnSR.npcBtnActive {
+  background: linear-gradient(135deg, #e0b8f0, #f0c8f8);
+  box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+}
+
 .npcBtnName {
   font-size: 10px;
   white-space: nowrap;
@@ -238,6 +251,20 @@
 .detailR .paramBar { background: #b8c8f0; }
 .detailR .paramVal { color: #4a5a8e; }
 .detailR .detailCloseBtn { color: #4a5a8e; }
+
+.detailSR {
+  background: linear-gradient(135deg, #f0d8f8, #f8e8ff, #f0d8f8);
+  border-color: #9c27b0;
+  box-shadow: 0 0 15px rgba(156, 39, 176, 0.25);
+}
+.detailSR .detailName { color: #4a148c !important; }
+.detailSR .detailRole { color: #6a1b9a; }
+.detailSR .detailMood { color: #5a2a7a; background: rgba(156, 39, 176, 0.15); }
+.detailSR .detailPersonality { color: #5a2a7a; }
+.detailSR .paramLabel { color: #6a1b9a; }
+.detailSR .paramBar { background: #e0c0f0; }
+.detailSR .paramVal { color: #6a1b9a; }
+.detailSR .detailCloseBtn { color: #6a1b9a; }
 
 .detailCloseBtn {
   display: none;

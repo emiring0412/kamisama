@@ -29,12 +29,11 @@ export async function generateOfflineSkeleton(
   const npcShort = npcs.map((n) => n.name + '(' + n.role + ')').join(',');
 
   const prompt = `/no_think
-JSON only. Village offline events. Day${startDay}-${endDay}(${formatElapsed(elapsedMinutes)}).
+Return exactly ONE JSON object. No extra text.
+Village offline. Day${startDay}-${endDay}(${formatElapsed(elapsedMinutes)}).
 NPCs: ${npcShort}
-
-${historyCount} entries. param_changes=DELTA ONLY(±1~3, skip unchanged NPCs). rel max 3 pairs.
-
-{"history_entries":["Day${startDay}: 要約"],"param_changes":{"Name":{"S":2,"A":-2}},"rel_changes":{"A→B":{"label":"関係","score_delta":-5}}}`;
+Generate ${historyCount} history_entries. param_changes=DELTA(±1~3, skip unchanged). rel max 3.
+{"history_entries":["Day${startDay}: 要約","Day${startDay+1}: 要約"],"param_changes":{"Name":{"S":2}},"rel_changes":{"A→B":{"label":"関係","score_delta":-5}}}`;
 
   const raw = await callBackendAI(apiKey, prompt, 2048);
   const data = parseAIResponse<OfflineSkeleton>(raw);

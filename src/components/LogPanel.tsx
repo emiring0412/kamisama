@@ -76,6 +76,7 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
   const [filterNpc, setFilterNpc] = useState<string | null>(null); // NPC名でフィルタ
   const [filterCivCategory, setFilterCivCategory] = useState<string | null>(null); // 図鑑カテゴリフィルタ
   const [ancientOpen, setAncientOpen] = useState(false); // 古代の記録アコーディオン
+  const [showEncyclopediaModal, setShowEncyclopediaModal] = useState(false); // 図鑑モーダル
   const [recentAllOpen, setRecentAllOpen] = useState(false); // 最近の出来事展開
   const [erasOpen, setErasOpen] = useState(false); // 過去の時代アコーディオン
   const listRef = useRef<HTMLDivElement>(null);
@@ -216,8 +217,8 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
           {'\uD83D\uDCDC'} 歴史
         </button>
         <button
-          className={`${styles.tab} ${tab === 'encyclopedia' ? styles.tabActive : ''}`}
-          onClick={() => setTab('encyclopedia')}
+          className={`${styles.tab} ${showEncyclopediaModal ? styles.tabActive : ''}`}
+          onClick={() => setShowEncyclopediaModal(true)}
         >
           {'\uD83D\uDCD6'} 図鑑{civilizations && civilizations.length > 0 ? ` (${civilizations.length})` : ''}
         </button>
@@ -425,8 +426,10 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
       )}
 
       {/* 図鑑タブ */}
-      {tab === 'encyclopedia' && (
-        <div className={styles.list}>
+      {showEncyclopediaModal && (
+        <div className={styles.encyclopediaOverlay} onClick={() => setShowEncyclopediaModal(false)}>
+        <div className={styles.encyclopediaModal} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.encyclopediaClose} onClick={() => setShowEncyclopediaModal(false)}>{'\u2715'}</button>
           {civilizations && civilizations.length > 0 ? (() => {
             const categoryIcon: Record<string, string> = {
               building: '\uD83C\uDFD7\uFE0F', tool: '\uD83D\uDD28', technology: '\u2699\uFE0F',
@@ -508,7 +511,7 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
                   ))}
                 </div>
                 <div className={styles.encyclopediaGrid}>
-                {filtered.map((civ) => (
+                {[...filtered].reverse().map((civ) => (
                   <div key={civ.id} className={`${styles.encyclopediaCard} ${isNew(civ) ? styles.encyclopediaCardNew : ''}`}>
                     {isNew(civ) && <span className={styles.newBadge}>NEW</span>}
                     <div className={styles.encyclopediaIcon}>
@@ -555,10 +558,11 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
             <div className={styles.empty}>まだ発明・発見はありません...</div>
           )}
         </div>
+        </div>
       )}
 
       {/* ログタブ */}
-      {tab !== 'history' && tab !== 'encyclopedia' && tab !== 'prayer' && (
+      {tab !== 'history' && tab !== 'prayer' && (
       <div className={styles.list} ref={listRef} onScroll={handleScroll}>
         {filteredLogs.length === 0 && (
           <div className={styles.empty}>
@@ -652,7 +656,7 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
         ))}
       </div>
       )} {/* tab !== 'history' */}
-      {!autoScroll && tab !== 'history' && tab !== 'encyclopedia' && tab !== 'prayer' && (
+      {!autoScroll && tab !== 'history' && tab !== 'prayer' && (
         <button
           className={styles.scrollBtn}
           onClick={() => {

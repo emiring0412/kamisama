@@ -571,12 +571,12 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
              '会話ログはまだありません'}
           </div>
         )}
-        {[...filteredLogs].reverse().map((log) => (
+        {[...filteredLogs].reverse().map((log, idx) => (
           <div
             key={log.id}
             className={styles.entry}
             style={{
-              borderLeftColor: log.source === 'ai' ? '#ff6b6b' : log.source === 'program' ? '#42a5f5' : log.npcColor,
+              borderLeftColor: idx % 2 === 0 ? '#c41e3a' : '#d4af37',
               opacity: copyMode && !selectedIds.has(log.id) ? 0.5 : 1,
               cursor: copyMode ? 'pointer' : undefined,
             }}
@@ -595,27 +595,6 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
                 </span>
               )}
               <span className={styles.time}>[{log.timestamp}]</span>
-              {log.source && (() => {
-                const tagToStatus: Record<string, { label: string; color: string }> = {
-                  'Qwen235B': { label: '明晰', color: '#4CAF50' },
-                  'Qwen': { label: '平凡', color: '#c41e3a' },
-                  'L70B': { label: '疲弊', color: '#FF9800' },
-                  'Ll8B': { label: '困難', color: '#ff6b6b' },
-                  'CIV': { label: '平凡', color: '#c41e3a' },
-                  'retry': { label: '平凡', color: '#c41e3a' },
-                };
-                const status = log.source === 'program' && log.modelTag !== 'passing'
-                  ? { label: '平凡', color: '#c41e3a' }
-                  : tagToStatus[log.modelTag ?? ''] ?? { label: '平凡', color: '#c41e3a' };
-                return (
-                  <span
-                    className={styles.sourceTag}
-                    style={{ background: `${status.color}22`, color: status.color }}
-                  >
-                    {status.label}
-                  </span>
-                );
-              })()}
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
                 <NpcIcon name={log.npcName} emoji={log.npcEmoji} npcs={npcs} size={18} /> {log.npcName}
               </span>

@@ -230,6 +230,8 @@
 .npcBtnName {
   font-size: 10px;
   white-space: nowrap;
+  color: #2a1a0a;
+  text-shadow: 0 0 2px #fff, 0 0 4px #fff;
 }
 
 /* NPC詳細パネル */

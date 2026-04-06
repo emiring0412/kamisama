@@ -80,7 +80,7 @@ export default function App() {
     return [];
   });
   const [selectedNPCId, setSelectedNPCId] = useState<string | null>(null);
-  const [paused, setPaused] = useState(false);
+  const [paused] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [model] = useState('qwen/qwen3-32b');
 
@@ -849,61 +849,37 @@ export default function App() {
           <span className={styles.thinkStatus} style={{ color: thinkStatus.color }}>
             {thinkStatus.emoji} {thinkStatus.label}
           </span>
-          <button
-            className={styles.btn}
-            onClick={() => setPaused(!paused)}
-          >
-            {paused ? '\u25B6 再開' : '\u23F8 一時停止'}
+          <button className={styles.btn} onClick={() => setSpeed(speed >= 3 ? 1 : speed + 1)}>
+            <span className={styles.btnIcon}>&#x26A1;</span>x{speed}
           </button>
-          <button
-            className={styles.btn}
-            onClick={() => setSpeed(speed >= 3 ? 1 : speed + 1)}
-          >
-            &#x26A1; x{speed}
-          </button>
-          <button
-            className={styles.btn}
-            onClick={() => setShowWhisperModal(true)}
-            title={whisperCooldown > 0 ? `クールダウン中 ${whisperCooldown}s` : 'NPCにささやく'}
-          >
-            {'\uD83D\uDD2E'} ささやき{whisperCooldown > 0 ? ` (${Math.ceil(whisperCooldown / 60)}m)` : ''}
+          <button className={styles.btn} onClick={() => setShowWhisperModal(true)} title={whisperCooldown > 0 ? `クールダウン中 ${whisperCooldown}s` : 'NPCにささやく'}>
+            <span className={styles.btnIcon}>{'\uD83D\uDD2E'}</span>ささやき{whisperCooldown > 0 ? `(${Math.ceil(whisperCooldown / 60)}m)` : ''}
           </button>
           <button className={styles.btn} onClick={() => setShowAddNPC(true)}>
-            {'\uD83D\uDC64'} 住民追加
+            <span className={styles.btnIcon}>{'\uD83D\uDC64'}</span>住民追加
           </button>
           <button className={styles.btn} onClick={() => setShowGacha(true)}>
-            {'\uD83C\uDFB0'} 召喚
+            <span className={styles.btnIcon}>{'\uD83C\uDFB0'}</span>召喚
           </button>
           <button className={styles.btn} onClick={() => { setShowInfo(true); setHasNewInfo(false); }} style={{ position: 'relative' }}>
-            {'\uD83D\uDCE2'} お知らせ
+            <span className={styles.btnIcon}>{'\uD83D\uDCE2'}</span>お知らせ
             {hasNewInfo && <span className={styles.badge} />}
           </button>
+          <a className={styles.btn} href="https://laf-create.jp/laf/forums/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <span className={styles.btnIcon}>{'\uD83E\uDE9E'}</span>八咫鏡
+          </a>
           <button className={styles.btn} onClick={() => setShowSettings(true)}>
-            {'\u2699\uFE0F'} 設定
-          </button>
-          <button className={styles.btn} style={{ color: '#ff6b6b' }} onClick={() => {
-            if (confirm('APIキーを残して村のデータをすべて削除し、最初からやり直しますか？')) {
-              (window as unknown as Record<string, boolean>).__kamisama_resetting = true;
-              // APIキーだけ退避してから全消去
-              const groqKey = localStorage.getItem(STORAGE_KEY);
-              const geminiKey = localStorage.getItem('kamisama_gemini_key');
-              localStorage.clear();
-              if (groqKey) localStorage.setItem(STORAGE_KEY, groqKey);
-              if (geminiKey) localStorage.setItem('kamisama_gemini_key', geminiKey);
-              window.location.href = window.location.pathname + '?reset=' + Date.now();
-            }
-          }}>
-            {'\uD83D\uDDD1\uFE0F'} リセット
+            <span className={styles.btnIcon}>{'\u2699\uFE0F'}</span>設定
           </button>
           <button className={styles.btn} style={{ color: '#c41e3a' }} onClick={() => setShowOfuse(true)}>
-            {'\u2615'} お布施
+            <span className={styles.btnIcon}>{'\u2615'}</span>お布施
           </button>
           <button className={styles.btn} onClick={() => {
             const next = layoutMode === 'auto' ? 'mobile' : layoutMode === 'mobile' ? 'desktop' : 'auto';
             setLayoutMode(next);
             localStorage.setItem('kamisama_layout', next);
           }}>
-            {layoutMode === 'auto' ? '\uD83D\uDCF1 自動' : layoutMode === 'mobile' ? '\uD83D\uDCF1 モバイル' : '\uD83D\uDDA5\uFE0F PC'}
+            <span className={styles.btnIcon}>{layoutMode === 'auto' ? '\uD83D\uDCF1' : layoutMode === 'mobile' ? '\uD83D\uDCF1' : '\uD83D\uDDA5\uFE0F'}</span>{layoutMode === 'auto' ? '自動' : layoutMode === 'mobile' ? 'モバイル' : 'PC'}
           </button>
         </div>
       </header>

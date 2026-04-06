@@ -205,6 +205,19 @@ export default function SettingsModal({ groqKey, geminiKey, onSave, onLogout, on
           }}>
             {'\uD83D\uDEAA'} ログアウト（APIキー削除）
           </button>
+          <button className={styles.logoutBtn} style={{ marginTop: '8px', color: '#ff6b6b', borderColor: '#ff6b6b' }} onClick={() => {
+            if (confirm('APIキーを残して村のデータをすべて削除し、最初からやり直しますか？')) {
+              (window as unknown as Record<string, boolean>).__kamisama_resetting = true;
+              const groqKey = localStorage.getItem('kamisama_api_key');
+              const geminiKey = localStorage.getItem('kamisama_gemini_key');
+              localStorage.clear();
+              if (groqKey) localStorage.setItem('kamisama_api_key', groqKey);
+              if (geminiKey) localStorage.setItem('kamisama_gemini_key', geminiKey);
+              window.location.href = window.location.pathname + '?reset=' + Date.now();
+            }
+          }}>
+            {'\uD83D\uDDD1\uFE0F'} リセット（村データ全削除）
+          </button>
         </div>
       </div>
     </div>

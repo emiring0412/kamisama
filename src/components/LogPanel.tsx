@@ -76,7 +76,8 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
   const [filterNpc, setFilterNpc] = useState<string | null>(null); // NPC名でフィルタ
   const [filterCivCategory, setFilterCivCategory] = useState<string | null>(null); // 図鑑カテゴリフィルタ
   const [ancientOpen, setAncientOpen] = useState(false); // 古代の記録アコーディオン
-  const [erasOpen, setErasOpen] = useState(true); // 過去の時代アコーディオン
+  const [recentAllOpen, setRecentAllOpen] = useState(false); // 最近の出来事展開
+  const [erasOpen, setErasOpen] = useState(false); // 過去の時代アコーディオン
   const listRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [copyMode, setCopyMode] = useState(false);
@@ -311,13 +312,27 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
             </div>
           )}
 
-          {/* 最近の歴史 */}
+          {/* 最近の歴史（直近20件、展開で全件） */}
           {villageHistory?.recentHistory && villageHistory.recentHistory.length > 0 && (
             <div className={styles.historySection}>
-              <div className={styles.historyLabel}>{'\uD83D\uDDD3\uFE0F'} 最近の出来事</div>
-              {villageHistory.recentHistory.map((entry, i) => (
+              <div className={styles.historyLabel}>{'\uD83D\uDDD3\uFE0F'} 最近の出来事 ({villageHistory.recentHistory.length})</div>
+              {villageHistory.recentHistory.slice(-20).map((entry, i) => (
                 <div key={i} className={styles.historyItem}>{entry}</div>
               ))}
+              {villageHistory.recentHistory.length > 20 && (
+                <button
+                  className={styles.accordionHeader}
+                  onClick={() => setRecentAllOpen((prev) => !prev)}
+                  style={{ marginTop: '4px', fontSize: '11px' }}
+                >
+                  {recentAllOpen ? '\u25BC 閉じる' : `\u25B6 もっと見る（残り${villageHistory.recentHistory.length - 20}件）`}
+                </button>
+              )}
+              {recentAllOpen && villageHistory.recentHistory.length > 20 && (
+                villageHistory.recentHistory.slice(0, -20).map((entry, i) => (
+                  <div key={`old-${i}`} className={styles.historyItem} style={{ color: '#9a8a70' }}>{entry}</div>
+                ))
+              )}
             </div>
           )}
 
@@ -586,7 +601,7 @@ export default function LogPanel({ logs, villageHistory, civilizations, npcs, cu
                   'retry': { label: '平凡', color: '#c41e3a' },
                 };
                 const status = log.source === 'program' && log.modelTag !== 'passing'
-                  ? { label: 'システム', color: '#42a5f5' }
+                  ? { label: '平凡', color: '#c41e3a' }
                   : tagToStatus[log.modelTag ?? ''] ?? { label: '平凡', color: '#c41e3a' };
                 return (
                   <span

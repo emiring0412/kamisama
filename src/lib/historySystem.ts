@@ -30,7 +30,8 @@ export function addToHistory(
   summary: string,
 ): VillageHistory {
   const entry = `Day${day}: ${summary}`;
-  const recent = [...history.recentHistory, entry];
+  // 安全弁: 最大30件に制限（圧縮が追いつかない場合に古いものを捨てる）
+  const recent = [...history.recentHistory, entry].slice(-30);
   return { ...history, recentHistory: recent };
 }
 

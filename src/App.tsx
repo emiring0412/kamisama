@@ -325,7 +325,35 @@ export default function App() {
     const saved = localStorage.getItem('kamisama_village_history');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return { ancientLog: [], ...parsed };
+      const h = { ancientLog: [], ...parsed };
+      // 肥大化したrecentHistoryを切り詰め（溢れた分は15件ずつ圧縮してancientLogに退避）
+      if (h.recentHistory && h.recentHistory.length > 30) {
+        const overflow = h.recentHistory.slice(0, -30);
+        const compressed: string[] = [];
+        for (let i = 0; i < overflow.length; i += 15) {
+          const chunk = overflow.slice(i, i + 15);
+          // 各エントリを文字列に正規化
+          const lines = chunk.map((e: unknown) => typeof e === 'string' ? e : `Day${(e as {Day:number}).Day}: ${(e as {entry:string}).entry}`);
+          // Day番号の範囲を取得
+          const days = lines.map((l: string) => { const m = l.match(/Day(\d+)/); return m ? parseInt(m[1], 10) : 0; }).filter((d: number) => d > 0);
+          const dayRange = days.length > 0 ? `Day${Math.min(...days)}-${Math.max(...days)}` : '';
+          // 要約を名前と出来事のキーワードから生成
+          const names = new Set<string>();
+          const topics = new Set<string>();
+          for (const l of lines) {
+            const nameMatch = l.match(/[:：]\s*(.+?)(?:と|が|の)/);
+            if (nameMatch) names.add(nameMatch[1]);
+            const topicMatch = l.match(/「(.+?)」/);
+            if (topicMatch) topics.add(topicMatch[1]);
+          }
+          const nameStr = [...names].slice(0, 4).join('・');
+          const topicStr = [...topics].slice(0, 3).join('、');
+          compressed.push(`${dayRange} ${nameStr ? nameStr + 'らの時代' : '過去の記録'}: ${topicStr || lines.slice(0, 3).map((l: string) => l.replace(/Day\d+:\s*/, '')).join('、')}`);
+        }
+        h.ancientLog = [...(h.ancientLog ?? []), ...compressed];
+        h.recentHistory = h.recentHistory.slice(-30);
+      }
+      return h;
     }
     return { ancientLog: [], pastEras: [], recentHistory: [] };
   });
@@ -712,14 +740,15 @@ export default function App() {
       const era = await polishEraJapanese(skeleton, villageHistory.recentHistory, model, apiKey);
       compressingRef.current = false;
       if (era) {
-        const allEras = [...villageHistory.pastEras, era];
-        const overflow = allEras.slice(0, Math.max(0, allEras.length - 5));
-        const newAncient = overflow.map((e) => `${e.period} ${e.eraName}: ${e.summary.split('。')[0]}`);
-
-        setVillageHistory({
-          ancientLog: [...(villageHistory.ancientLog ?? []), ...newAncient],
-          pastEras: allEras.slice(-5),
-          recentHistory: [],
+        setVillageHistory((prev) => {
+          const allEras = [...prev.pastEras, era];
+          const overflow = allEras.slice(0, Math.max(0, allEras.length - 5));
+          const newAncient = overflow.map((e) => `${e.period} ${e.eraName}: ${e.summary.split('。')[0]}`);
+          return {
+            ancientLog: [...(prev.ancientLog ?? []), ...newAncient],
+            pastEras: allEras.slice(-5),
+            recentHistory: [],
+          };
         });
         addLog({
           id: `${Date.now()}-era-compress`,

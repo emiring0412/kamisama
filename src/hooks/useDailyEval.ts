@@ -4,7 +4,7 @@ import type { GameTime } from './useGameClock';
 import { applyParamChanges } from '../lib/dynamicPersonality';
 import { addToHistory } from '../lib/historySystem';
 import { batchDailyEval, regeneratePersonalityFront, generatePrayers } from '../lib/batchEval';
-import { isDead, canHaveChild, createChild } from '../lib/lifespanSystem';
+import { isDead, canHaveChild, createChild, checkMarriage } from '../lib/lifespanSystem';
 import { isRRole } from '../lib/gachaData';
 
 // ゲーム内1日ごと・7日ごとの定期評価
@@ -307,7 +307,29 @@ export function useDailyEval(
         }
       }
 
-      // 出生判定（関係性+70以上のペア）
+      // 結婚判定（恋人同士が好感度30以上で夫婦にランクアップ）
+      const marriageResult = checkMarriage(alive);
+      if (marriageResult.marriages.length > 0) {
+        for (let k = 0; k < alive.length; k++) {
+          const mu = marriageResult.updated.find((u) => u.id === alive[k].id);
+          if (mu) alive[k] = { ...alive[k], relationships: mu.relationships };
+        }
+        for (const m of marriageResult.marriages) {
+          addLog({
+            id: `${Date.now()}-marriage-${m.a}-${m.b}`,
+            timestamp: timestamp(),
+            npcName: m.a,
+            npcEmoji: '\uD83D\uDC92',
+            npcColor: '#c41e3a',
+            think: `${m.a}と${m.b}が伴侶となった！`,
+            isEvent: true,
+            source: 'program',
+          });
+          setVillageHistory((prev) => addToHistory(prev, gameTime.day, `${m.a}と${m.b}が伴侶となった`));
+        }
+      }
+
+      // 出生判定（双方が夫婦ラベルのペア）
       const existingNames = alive.map((n) => n.name);
       for (let i = 0; i < alive.length; i++) {
         for (let j = i + 1; j < alive.length; j++) {

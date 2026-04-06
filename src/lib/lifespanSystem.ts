@@ -1,6 +1,55 @@
 import type { NPC, NPCParams } from '../types';
 import { NPC_HOMES } from './constants';
 
+// 恋人系ラベル判定
+const LOVE_WORDS = ['好意', '恋', '愛', '想い', '惹かれ', '特別', '大切', '好き'];
+// 夫婦系ラベル
+const MARRIAGE_WORDS = ['夫婦', '伴侶', '妻', '夫', '連れ合い', '番'];
+const MARRIAGE_THRESHOLD = 30; // この好感度以上で自動結婚
+
+// 恋人同士が好感度一定以上で夫婦にランクアップ
+export function checkMarriage(npcs: NPC[]): { updated: NPC[]; marriages: Array<{ a: string; b: string }> } {
+  const marriages: Array<{ a: string; b: string }> = [];
+  let updated = [...npcs];
+
+  for (let i = 0; i < updated.length; i++) {
+    for (let j = i + 1; j < updated.length; j++) {
+      const a = updated[i];
+      const b = updated[j];
+      if (a.gender === b.gender) continue;
+
+      const relA = a.relationships[b.id];
+      const relB = b.relationships[a.id];
+      if (!relA || !relB) continue;
+
+      // 既に夫婦ならスキップ
+      const alreadyMarriedA = MARRIAGE_WORDS.some((w) => relA.label.includes(w));
+      const alreadyMarriedB = MARRIAGE_WORDS.some((w) => relB.label.includes(w));
+      if (alreadyMarriedA && alreadyMarriedB) continue;
+
+      // 双方が恋人系ラベル + 好感度が閾値以上
+      const isLoveA = LOVE_WORDS.some((w) => relA.label.includes(w));
+      const isLoveB = LOVE_WORDS.some((w) => relB.label.includes(w));
+      if (!isLoveA || !isLoveB) continue;
+      if (relA.score < MARRIAGE_THRESHOLD || relB.score < MARRIAGE_THRESHOLD) continue;
+
+      // 夫婦にランクアップ
+      updated = updated.map((n) => {
+        if (n.id === a.id) {
+          return { ...n, relationships: { ...n.relationships, [b.id]: { ...relA, label: '伴侶' } } };
+        }
+        if (n.id === b.id) {
+          return { ...n, relationships: { ...n.relationships, [a.id]: { ...relB, label: '伴侶' } } };
+        }
+        return n;
+      });
+      marriages.push({ a: a.name, b: b.name });
+    }
+  }
+
+  return { updated, marriages };
+}
+
 // 初期年齢: 20〜30歳
 export function randomAge(): number {
   return 20 + Math.floor(Math.random() * 11);
@@ -64,11 +113,14 @@ const MAX_CHILDREN_PER_PAIR = 4;
 export function canHaveChild(a: NPC, b: NPC, allNPCs: NPC[] = []): boolean {
   // 異性のみ
   if (a.gender === b.gender) return false;
-  // 好感度チェック
+  // 関係性チェック: 双方が夫婦であること
   const relA = a.relationships[b.id];
   const relB = b.relationships[a.id];
   if (!relA || !relB) return false;
-  if (relA.score < 10 || relB.score < 10) return false;
+  const marriageWords = ['夫婦', '伴侶', '妻', '夫', '連れ合い', '番'];
+  const isMarriedA = marriageWords.some((w) => relA.label.includes(w));
+  const isMarriedB = marriageWords.some((w) => relB.label.includes(w));
+  if (!isMarriedA || !isMarriedB) return false;
   // 3等身以内は不可
   if (isCloseRelative(a, b, allNPCs)) return false;
   // ペアの子ども上限

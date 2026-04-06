@@ -1,0 +1,411 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.overlayR {
+  composes: overlay;
+}
+.overlayR::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 500px; height: 500px;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(100, 180, 100, 0.15) 30deg,
+    transparent 60deg,
+    rgba(100, 180, 100, 0.1) 90deg,
+    transparent 120deg,
+    rgba(100, 180, 100, 0.15) 150deg,
+    transparent 180deg,
+    rgba(100, 180, 100, 0.1) 210deg,
+    transparent 240deg,
+    rgba(100, 180, 100, 0.15) 270deg,
+    transparent 300deg,
+    rgba(100, 180, 100, 0.1) 330deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  animation: haloSpin 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes haloSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.modal {
+  background: #fff;
+  border: 1px solid #c4d4c4;
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-size: 18px;
+  color: #2e7d32;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.desc {
+  font-size: 12px;
+  color: #6b8b6b;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.pointsBar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #558b55;
+}
+.pointsBar strong { color: #2e7d32; }
+
+.rateInfo {
+  text-align: center; margin-bottom: 16px;
+  font-size: 12px; color: #6b8b6b;
+}
+
+/* ガチャボタン */
+.pullBtn {
+  display: block; width: 100%; padding: 12px;
+  border: none; border-radius: 8px;
+  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  color: #f0faf0; font-weight: 700; font-size: 15px;
+  cursor: pointer; margin-bottom: 8px; transition: opacity 0.2s;
+}
+.pullBtn:hover { opacity: 0.9; }
+.pullBtn:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+
+.pullBtnMulti {
+  background: linear-gradient(135deg, #1a237e, #3949ab);
+}
+
+/* ===== 演出オーバーレイ ===== */
+.animOverlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.animBg {
+  position: absolute; inset: 0;
+  background: #000;
+  transition: background 0.4s ease;
+}
+.animBgFlash {
+  animation: flashBg 0.5s ease-in-out forwards;
+}
+@keyframes flashBg {
+  0% { background: #000; }
+  40% { background: #fff; }
+  100% { background: #111; }
+}
+
+/* 光の玉 */
+.orb {
+  position: relative; z-index: 1;
+  width: 20px; height: 20px; border-radius: 50%;
+  animation: orbGrow 1.2s ease-in-out forwards;
+}
+.orbExplode {
+  animation: orbExplode 0.4s ease-out forwards !important;
+}
+@keyframes orbGrow {
+  0% { width: 4px; height: 4px; opacity: 0.3; }
+  50% { width: 40px; height: 40px; opacity: 0.8; }
+  100% { width: 50px; height: 50px; opacity: 1; }
+}
+@keyframes orbExplode {
+  0% { width: 50px; height: 50px; opacity: 1; }
+  50% { width: 250px; height: 250px; opacity: 0.7; }
+  100% { width: 500px; height: 500px; opacity: 0; }
+}
+
+/* レアリティ表示 */
+.animRarity {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: fadeInUp 0.4s ease-out;
+}
+.animRarityText {
+  font-size: 56px; font-weight: 900;
+  text-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+  animation: rarityPulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes rarityPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+/* アイテム表示（演出中） */
+.animItem {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  animation: fadeInUp 0.5s ease-out;
+}
+.animItemEmoji {
+  font-size: 72px;
+  filter: drop-shadow(0 0 20px rgba(255,255,255,0.4));
+  animation: itemBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.animItemName {
+  font-size: 20px; font-weight: 700; color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+@keyframes itemBounce {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.animSkipHint {
+  position: absolute; bottom: 40px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.4); font-size: 12px;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* ===== 10連グリッド ===== */
+.multiGrid {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+  width: 320px;
+}
+.gridCell {
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.gridCellLit {
+  animation: cellPop 0.3s ease-out;
+}
+@keyframes cellPop {
+  0% { transform: scale(0.3); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.gridOrb {
+  width: 30px; height: 30px; border-radius: 50%;
+  transition: opacity 0.15s;
+}
+.gridOrbR {
+  animation: orbFloat 1.8s ease-in-out infinite alternate;
+}
+@keyframes orbFloat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(0.95); }
+}
+
+/* 10連サマリー */
+.summaryWrap {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  animation: fadeInUp 0.4s ease-out;
+}
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+.summaryCell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: cellPop 0.4s ease-out backwards;
+}
+.summaryCell:nth-child(1) { animation-delay: 0s; }
+.summaryCell:nth-child(2) { animation-delay: 0.05s; }
+.summaryCell:nth-child(3) { animation-delay: 0.1s; }
+.summaryCell:nth-child(4) { animation-delay: 0.15s; }
+.summaryCell:nth-child(5) { animation-delay: 0.2s; }
+.summaryCell:nth-child(6) { animation-delay: 0.25s; }
+.summaryCell:nth-child(7) { animation-delay: 0.3s; }
+.summaryCell:nth-child(8) { animation-delay: 0.35s; }
+.summaryCell:nth-child(9) { animation-delay: 0.4s; }
+.summaryCell:nth-child(10) { animation-delay: 0.45s; }
+.summaryCellR {
+  filter: drop-shadow(0 0 8px rgba(100, 200, 100, 0.6));
+}
+.revealedItem {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  animation: silReveal 0.4s ease-out;
+}
+.revealedItemEmoji {
+  font-size: 28px;
+}
+.revealedItemRarity {
+  font-size: 10px; font-weight: 700;
+}
+@keyframes silReveal {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ===== 結果カード ===== */
+.resultCard {
+  background: #f0f5e0; border: 1px solid #c4d4a0;
+  border-radius: 8px; padding: 16px;
+  position: relative;
+  animation: cardBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.resultCardR {
+  background: linear-gradient(135deg, #d0f0d0, #e0ffe0, #d0f0d0);
+  border-color: #66bb6a;
+  box-shadow: 0 0 20px rgba(102, 187, 106, 0.3), 0 0 60px rgba(102, 187, 106, 0.1);
+}
+@keyframes cardBounce {
+  0% { transform: scale(0.3) translateY(30px); opacity: 0; }
+  60% { transform: scale(1.05) translateY(-6px); opacity: 1; }
+  80% { transform: scale(0.97) translateY(2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.resultHeader {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.resultEmoji { font-size: 36px; }
+.resultName { font-size: 16px; font-weight: 700; color: #2a3a2a; }
+.resultRarityBadge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  display: inline-block; margin-left: 8px;
+}
+.resultRarityN { background: #e8e0d0; color: #8b7355; }
+.resultRarityR { background: #c8e6c9; color: #2e7d32; }
+
+.resultDesc { font-size: 12px; color: #5a6a5a; line-height: 1.5; margin-bottom: 10px; }
+
+/* 10連ナビ */
+.multiNav {
+  display: flex; gap: 4px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;
+}
+.multiDot {
+  width: 24px; height: 24px; border-radius: 4px; border: 1px solid #c4d4c4;
+  background: #f0f5e0; color: #6b8b6b; font-size: 11px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.multiDotActive { border-color: #2e7d32; color: #2e7d32; background: #e8f5e9; }
+.multiDotR { color: #2e7d32; border-color: #2e7d32; background: #e8f5e9; }
+
+/* レアリティ表示バー */
+.resultRarityBar {
+  text-align: center; font-size: 14px; font-weight: 700;
+  margin-bottom: 8px; padding: 6px 0; border-radius: 4px;
+}
+.rarityN { background: #f0ebe4; color: #8b7355; }
+.rarityR {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32); color: #e8f5e9;
+}
+
+/* 取得ボタン */
+.acquireBtn {
+  padding: 8px 20px; border: none; border-radius: 6px;
+  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  color: #f0faf0; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.actions {
+  display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+}
+
+.closeBtn {
+  display: block; width: 100%; padding: 8px;
+  border: 1px solid #c4d4c4; border-radius: 6px;
+  background: transparent; color: #6b8b6b; font-size: 12px;
+  cursor: pointer; margin-top: 8px;
+}
+
+/* 説明セクション */
+.infoSection {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f5faf0;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+}
+.infoTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #558b55;
+  margin-bottom: 8px;
+}
+.infoTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+}
+.infoTable td {
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #3a5a3a;
+  vertical-align: top;
+  border-bottom: 1px solid #c8e6c9;
+}
+.infoTable tr:last-child td { border-bottom: none; }
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.itemEntry {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.itemEntryN { background: #faf5ed; border: 1px solid #e8dcc8; }
+.itemEntryR { background: #f0f8f0; border: 1px solid #c8e6c9; }
+.itemEmoji { font-size: 16px; }
+.itemName { font-size: 12px; font-weight: 600; color: #3a4a3a; min-width: 72px; }
+.itemDesc { font-size: 10px; color: #6b8b6b; }
+
+/* キラキラ */
+.sparklesContainer {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2;
+}
+.sparkle {
+  position: absolute; border-radius: 50%;
+  animation: sparkleAnim 0.8s ease-out forwards;
+  opacity: 0;
+}
+@keyframes sparkleAnim {
+  0% { opacity: 0; transform: scale(0) rotate(0deg); }
+  30% { opacity: 1; transform: scale(1.2) rotate(90deg); }
+  60% { opacity: 0.8; transform: scale(0.8) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0) rotate(360deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

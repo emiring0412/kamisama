@@ -1,4 +1,4 @@
-import type { NPC, VillageHistory, CivilizationItem, Whisper } from '../types';
+import type { NPC, VillageHistory, CivilizationItem, Whisper, Buff, ConfessionUrge } from '../types';
 import type { GameTime } from '../hooks/useGameClock';
 import { getSeasonLabel } from '../hooks/useGameClock';
 import { paramToPersonality } from './paramToPersonality';
@@ -99,6 +99,36 @@ function getDiscoveryHint(role: string): string {
     '猟師': '【発見の目】あなたは猟師として、動物の気配に敏感だ。見慣れない獣の足跡、鳥の巣、木の実を食べる小動物などの発見を図鑑に報告せよ（civilization_event type:"discovery"）。',
   };
   return hints[role] ?? '';
+}
+
+// バフプロンプト（アイテム効果をAIに伝える）
+function buildBuffPrompt(buffs?: Buff[]): string {
+  if (!buffs || buffs.length === 0) return '';
+  const parts: string[] = [];
+  for (const buff of buffs) {
+    if (buff.type === 'discovery_up') {
+      parts.push('【特別な予感】今日は何か新しいものを見つけられそうな予感がする。周囲をよく観察し、珍しいものがあればcivilization_event(type:"discovery")で報告せよ。');
+    } else if (buff.type === 'positive') {
+      parts.push('【穏やかな空気】今日はなぜか穏やかな気分だ。相手の良いところを見つけたい。争いは避けたい。');
+    } else if (buff.type === 'cataclysm' && buff.description) {
+      parts.push(`【天変地異】村に大きな出来事があった。「${buff.description}」。この出来事は村全体に影響を与えている。あなたの思考・行動・会話にこの出来事の影響を反映せよ。不安、恐れ、助け合い、備え、議論など、あなたの性格に応じた自然な反応を示せ。`);
+    }
+  }
+  return parts.join('\n');
+}
+
+// 告白促進プロンプト（遭遇時に注入）
+function buildConfessionPrompt(npc: NPC, partner: NPC, confessionUrges?: ConfessionUrge[]): string {
+  if (!confessionUrges || confessionUrges.length === 0) return '';
+  const hasUrge = confessionUrges.some(
+    (u) => (u.npcId1 === npc.id && u.npcId2 === partner.id) ||
+           (u.npcId1 === partner.id && u.npcId2 === npc.id)
+  );
+  if (!hasUrge) return '';
+  return `【特別な感情】${npc.name}は${partner.name}に対して言葉にできない特別な感情を抱いている。今日こそ伝えたい。会話の中で自然にその気持ちを表現せよ。
+※告白が成功した場合: rel_changeのlabelに「好意」「恋」「想い人」「特別な存在」「好き」など恋愛感情を表すラベルを使え。
+※告白が失敗・拒否された場合: labelは現状維持でよい。score_deltaをマイナスにしてもよい。
+※結果は2人の現在の好感度と性格次第。好感度が高ければ成功しやすいが、低ければ拒否されてもよい。`;
 }
 
 // ささやきプロンプト
@@ -206,7 +236,7 @@ function buildTimeText(gameTime?: GameTime): string {
 }
 
 // 独白プロンプト
-export function buildMonologuePrompt(npc: NPC, gameTime?: GameTime, history?: VillageHistory, civilizations: CivilizationItem[] = [], whisper?: Whisper | null, fallback?: boolean, whisperIntensity?: number): string {
+export function buildMonologuePrompt(npc: NPC, gameTime?: GameTime, history?: VillageHistory, civilizations: CivilizationItem[] = [], whisper?: Whisper | null, fallback?: boolean, whisperIntensity?: number, buffs?: Buff[]): string {
   const location = getNearestFacility(npc.x, npc.y);
   const paramText = paramToPersonality(npc.params);
   const shortMem = npc.memory.length > 0
@@ -222,6 +252,7 @@ export function buildMonologuePrompt(npc: NPC, gameTime?: GameTime, history?: Vi
 
   const worldPremise = buildWorldPremise(civilizations);
   const whisperText = buildWhisperPrompt(npc, whisper, fallback);
+  const buffText = buildBuffPrompt(buffs);
 
   // 介入副作用: whisperIntensity（直近の介入頻度 0-1）に応じた村の空気
   let interventionEffect = '';
@@ -247,6 +278,7 @@ export function buildMonologuePrompt(npc: NPC, gameTime?: GameTime, history?: Vi
     seasonHint,
     eveningHint,
     whisperText,
+    buffText,
     interventionEffect,
     '【あなたの記憶】',
     longMem,
@@ -263,7 +295,7 @@ export function buildMonologuePrompt(npc: NPC, gameTime?: GameTime, history?: Vi
 }
 
 // 遭遇プロンプト（会話ラリー方式）
-export function buildEncounterPrompt(a: NPC, b: NPC, gameTime?: GameTime, history?: VillageHistory, civilizations: CivilizationItem[] = []): string {
+export function buildEncounterPrompt(a: NPC, b: NPC, gameTime?: GameTime, history?: VillageHistory, civilizations: CivilizationItem[] = [], buffs?: Buff[], confessionUrges?: ConfessionUrge[]): string {
   const location = getNearestFacility(a.x, a.y);
   const aParam = paramToPersonality(a.params);
   const bParam = paramToPersonality(b.params);
@@ -300,6 +332,16 @@ export function buildEncounterPrompt(a: NPC, b: NPC, gameTime?: GameTime, histor
   if (b.memory.length > 0) lines.push(`B最近:${b.memory.slice(-3).join('/')}`);
   if (aEmergence) lines.push(`A${aEmergence}`);
   if (bEmergence) lines.push(`B${bEmergence}`);
+
+  // バフ注入
+  const buffText = buildBuffPrompt(buffs);
+  if (buffText) lines.push(buffText);
+
+  // 告白促進注入（双方に注入）
+  const confA = buildConfessionPrompt(a, b, confessionUrges);
+  const confB = buildConfessionPrompt(b, a, confessionUrges);
+  if (confA) lines.push(confA);
+  if (confB) lines.push(confB);
 
   lines.push(
     EMERGENCE_PROMPT,

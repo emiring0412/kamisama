@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { NPC, LogEntry, VillageHistory, CivilizationItem, Whisper, Prayer } from './types';
+import type { NPC, LogEntry, VillageHistory, CivilizationItem, Whisper, Prayer, ItemDef, Buff, ForceConversation, ConfessionUrge } from './types';
 import { INITIAL_NPCS, createInitialNPC, FACILITIES, NPC_HOMES, MAP_WIDTH, MAP_HEIGHT } from './lib/constants';
 import {
   isRateLimited, isDailyLimitReached, isFallbackActive, getCurrentModelLabel, isGeminiActive,
@@ -19,6 +19,8 @@ import WelcomeBack from './components/WelcomeBack';
 import WhisperModal from './components/WhisperModal';
 import AddNPCModal from './components/AddNPCModal';
 import GachaModal from './components/GachaModal';
+import ItemGachaModal from './components/ItemGachaModal';
+import InventoryModal from './components/InventoryModal';
 import DepartureModal from './components/DepartureModal';
 import SettingsModal from './components/SettingsModal';
 import AboutModal from './components/AboutModal';
@@ -27,6 +29,7 @@ import CharacterSprite from './components/CharacterSprite';
 import { idToClothHex, idToSkinHex, idToEyeHex, idToMouthHex, idToHairFront, idToHairBack, idToHasBeard } from './components/NPCSprite';
 import WorldMap from './components/WorldMap';
 import { isRRole } from './lib/gachaData';
+import { getItemDef } from './lib/itemGachaData';
 import LogPanel from './components/LogPanel';
 import styles from './App.module.css';
 
@@ -124,6 +127,27 @@ export default function App() {
   const [showWhisperModal, setShowWhisperModal] = useState(false);
   const [showAddNPC, setShowAddNPC] = useState(false);
   const [showGacha, setShowGacha] = useState(false);
+  const [showItemGacha, setShowItemGacha] = useState(false);
+
+  // アイテムインベントリ
+  const [inventory, setInventory] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('kamisama_items');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [showInventory, setShowInventory] = useState(false);
+
+  // バフシステム
+  const [buffs, setBuffs] = useState<Buff[]>(() => {
+    const saved = localStorage.getItem('kamisama_buffs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // 強制会話キュー
+  const [forceConversations, setForceConversations] = useState<ForceConversation[]>([]);
+
+  // 告白促進キュー
+  const [confessionUrges, setConfessionUrges] = useState<ConfessionUrge[]>([]);
+
   const [departureCandidate, setDepartureCandidate] = useState<{ npc: NPC; reason: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showOfuse, setShowOfuse] = useState(false);
@@ -253,6 +277,63 @@ export default function App() {
       return next;
     });
   }, []);
+
+  // 概念ガチャ用ポイント消費
+  const spendConceptualPoints = useCallback((amount: number) => {
+    setCivilizationPoints((prev) => {
+      const next = { ...prev, conceptual: Math.max(0, prev.conceptual - amount) };
+      localStorage.setItem('kamisama_civ_points', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // アイテムインベントリに追加
+  const addItemsToInventory = useCallback((items: ItemDef[]) => {
+    setInventory((prev) => {
+      const next = { ...prev };
+      for (const item of items) {
+        next[item.id] = (next[item.id] || 0) + 1;
+      }
+      localStorage.setItem('kamisama_items', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // アイテム1個消費
+  const consumeItem = useCallback((itemId: string) => {
+    setInventory((prev) => {
+      const next = { ...prev };
+      if ((next[itemId] || 0) > 0) {
+        next[itemId]--;
+        if (next[itemId] <= 0) delete next[itemId];
+      }
+      localStorage.setItem('kamisama_items', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // 強制会話追加
+  const addForceConversation = useCallback((npcId1: string, npcId2: string) => {
+    setForceConversations((prev) => [...prev, { npcId1, npcId2 }]);
+  }, []);
+
+  // 強制会話消費（useAILoopから呼ばれる）
+  const consumeForceConversation = useCallback(() => {
+    setForceConversations((prev) => prev.slice(1));
+  }, []);
+
+  // 告白促進追加
+  const addConfessionUrge = useCallback((npcId1: string, npcId2: string) => {
+    setConfessionUrges((prev) => [...prev, { npcId1, npcId2 }]);
+  }, []);
+
+  // 告白促進消費
+  const consumeConfessionUrge = useCallback((npcId1: string, npcId2: string) => {
+    setConfessionUrges((prev) => prev.filter((u) => !(u.npcId1 === npcId1 && u.npcId2 === npcId2) && !(u.npcId1 === npcId2 && u.npcId2 === npcId1)));
+  }, []);
+
+  // 未収穫アイテム数（豊作祈願用）
+  const unharvestedCount = civilizations.filter((c) => !harvestedIds.has(c.id) && c.category !== 'demolish').length;
 
   const [mapScale, setMapScale] = useState(1);
 
@@ -459,6 +540,36 @@ export default function App() {
   // ゲーム内時計
   const { gameTime, dayChanged: _dayChanged } = useGameClock((paused && !welcomeBack.show) || offlineRetrying, speed);
 
+  // バフ期限切れ自動削除
+  useEffect(() => {
+    if (!gameTime) return;
+    setBuffs((prev) => {
+      const active = prev.filter((b) => b.expiresDay > gameTime.day);
+      if (active.length !== prev.length) {
+        localStorage.setItem('kamisama_buffs', JSON.stringify(active));
+      }
+      return active;
+    });
+  }, [gameTime?.day]);
+
+  // バフ追加（好感度ボーナスは累積、それ以外は上書き）
+  const addBuff = useCallback((type: Buff['type'], days: number) => {
+    setBuffs((prev) => {
+      const day = gameTime?.day ?? 1;
+      let next: Buff[];
+      if (type === 'affection') {
+        // 好感度ボーナスは累積（複数スタック可）
+        next = [...prev, { type, expiresDay: day + days }];
+      } else {
+        // それ以外は上書き
+        const filtered = prev.filter((b) => b.type !== type);
+        next = [...filtered, { type, expiresDay: day + days }];
+      }
+      localStorage.setItem('kamisama_buffs', JSON.stringify(next));
+      return next;
+    });
+  }, [gameTime?.day]);
+
   // ログ追加関数
   const addLog = useCallback((entry: LogEntry) => {
     setLogs((prev) => {
@@ -470,6 +581,183 @@ export default function App() {
       return next;
     });
   }, []);
+
+  // COLORS（髪色変更用）
+  const HAIR_COLORS = [
+    '#F44336', '#E53935', '#C62828', '#D32F2F', '#FF5252',
+    '#FF9800', '#FB8C00', '#F57C00', '#EF6C00', '#E65100',
+    '#795548', '#6D4C41', '#5D4037', '#4E342E', '#A1887F',
+    '#4CAF50', '#43A047', '#388E3C', '#2E7D32', '#1B5E20',
+    '#2196F3', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1',
+    '#9C27B0', '#8E24AA', '#7B1FA2', '#6A1B9A', '#AB47BC',
+    '#BF8A30', '#D4AF37', '#C5A030', '#DAA520', '#B8860B',
+  ];
+
+  const CATACLYSM_EVENTS = [
+    { name: '大嵐', desc: '激しい嵐が村を襲った。屋根が飛び、畑が荒れた。' },
+    { name: '豊作', desc: '畑に驚くほどの実りがあった。食料に困ることはなさそうだ。' },
+    { name: '金脈発見', desc: '鉱山の奥で光る鉱脈が見つかった。村に富をもたらすかもしれない。' },
+    { name: '謎の旅人', desc: '見知らぬ旅人が村を訪れた。遠い土地の話を聞かせてくれた。' },
+    { name: '火事', desc: '村の一角で火が出た。皆で消し止めたが、焦げ跡が残った。' },
+    { name: '疫病', desc: '村人の間で体調を崩す者が増えている。原因はまだわからない。' },
+  ];
+
+  // アイテム使用ハンドラ
+  const handleUseItem = useCallback((itemId: string, targets: string[], extra?: string) => {
+    consumeItem(itemId);
+    const day = gameTime?.day ?? 1;
+
+    switch (itemId) {
+      case 'force_talk': {
+        addForceConversation(targets[0], targets[1]);
+        break;
+      }
+      case 'discovery_up': {
+        addBuff('discovery_up', 3);
+        break;
+      }
+      case 'hair_change': {
+        setNPCs((prev) => prev.map((n) => {
+          if (n.id !== targets[0]) return n;
+          const available = HAIR_COLORS.filter((c) => c !== n.color);
+          const newColor = available[Math.floor(Math.random() * available.length)];
+          return { ...n, color: newColor };
+        }));
+        break;
+      }
+      case 'name_change': {
+        const newName = extra || '';
+        setNPCs((prev) => prev.map((n) => n.id === targets[0] ? { ...n, name: newName } : n));
+        break;
+      }
+      case 'reconcile': {
+        setNPCs((prev) => prev.map((n) => {
+          if (n.id === targets[0]) {
+            const rels = { ...n.relationships };
+            const existing = rels[targets[1]] || { label: '知り合い', score: 0 };
+            rels[targets[1]] = { ...existing, score: Math.min(100, existing.score + 3) };
+            return { ...n, relationships: rels };
+          }
+          if (n.id === targets[1]) {
+            const rels = { ...n.relationships };
+            const existing = rels[targets[0]] || { label: '知り合い', score: 0 };
+            rels[targets[0]] = { ...existing, score: Math.min(100, existing.score + 3) };
+            return { ...n, relationships: rels };
+          }
+          return n;
+        }));
+        break;
+      }
+      case 'gender_change': {
+        setNPCs((prev) => prev.map((n) => {
+          if (n.id !== targets[0]) return n;
+          return { ...n, gender: n.gender === 'male' ? 'female' : 'male' };
+        }));
+        break;
+      }
+      case 'confession': {
+        addConfessionUrge(targets[0], targets[1]);
+        break;
+      }
+      case 'positive_buff': {
+        addBuff('positive', 7);
+        break;
+      }
+      case 'affection_bonus': {
+        addBuff('affection', 7);
+        break;
+      }
+      case 'cataclysm': {
+        const event = CATACLYSM_EVENTS[Math.floor(Math.random() * CATACLYSM_EVENTS.length)];
+        // 全NPCのメモリに追加
+        setNPCs((prev) => prev.map((n) => ({
+          ...n,
+          memory: [...n.memory, `天変地異「${event.name}」が起きた: ${event.desc}`].slice(-6),
+        })));
+        // 3日間プロンプト注入バフとして登録（AIが文脈を汲む）
+        setBuffs((prev) => {
+          const filtered = prev.filter((b) => b.type !== 'cataclysm');
+          const next = [...filtered, { type: 'cataclysm' as const, expiresDay: day + 3, description: `${event.name}: ${event.desc}` }];
+          localStorage.setItem('kamisama_buffs', JSON.stringify(next));
+          return next;
+        });
+        addLog({
+          id: `${Date.now()}-cataclysm`,
+          timestamp: `Day${day} ${gameTime?.displayTime ?? ''}`,
+          npcName: '天変地異',
+          npcEmoji: '🌪️',
+          npcColor: '#f44336',
+          think: `${event.name}: ${event.desc}（3日間影響）`,
+          isEvent: true,
+          source: 'program',
+        });
+        break;
+      }
+      case 'harvest_prayer': {
+        // 図鑑収録アイテム数（demolish除く）× 1P を物理Pに加算
+        const totalCivCount = civilizations.filter((c) => c.category !== 'demolish').length;
+        if (totalCivCount > 0) {
+          setCivilizationPoints((prev) => {
+            const next = { ...prev, physical: prev.physical + totalCivCount };
+            localStorage.setItem('kamisama_civ_points', JSON.stringify(next));
+            return next;
+          });
+        }
+        break;
+      }
+    }
+
+    // アイテム使用ログ（天変地異は上で独自ログを出しているのでスキップ）
+    if (itemId !== 'cataclysm') {
+      const def = getItemDef(itemId);
+      if (def) {
+        const names = targets.map((id) => npcs.find((n) => n.id === id)?.name || '?');
+        let msg = `${def.emoji} ${def.name}を使用`;
+        if (itemId === 'force_talk') {
+          // 告白促進が同じペアにあるか判定
+          const pairHasConfession = confessionUrges.some(
+            (u) => (u.npcId1 === targets[0] && u.npcId2 === targets[1]) ||
+                   (u.npcId1 === targets[1] && u.npcId2 === targets[0])
+          );
+          msg = pairHasConfession
+            ? `💘 ${names[0]}と${names[1]}の告白イベントを発動！`
+            : `${def.emoji} ${names[0]}と${names[1]}に強制会話を仕掛けた`;
+        }
+        else if (itemId === 'hair_change') msg = `${def.emoji} ${names[0]}の髪色を変えた`;
+        else if (itemId === 'name_change') msg = `${def.emoji} ${names[0]}の名前を「${extra}」に変えた`;
+        else if (itemId === 'reconcile') msg = `${def.emoji} ${names[0]}と${names[1]}の仲を取り持った（好感度+3）`;
+        else if (itemId === 'gender_change') msg = `${def.emoji} ${names[0]}の性別を変えた`;
+        else if (itemId === 'confession') {
+          // 強制会話が同じペアにあるか判定
+          const pairHasForce = forceConversations.some(
+            (f) => (f.npcId1 === targets[0] && f.npcId2 === targets[1]) ||
+                   (f.npcId1 === targets[1] && f.npcId2 === targets[0])
+          );
+          msg = pairHasForce
+            ? `💘 ${names[0]}と${names[1]}の告白イベントを発動！`
+            : `${def.emoji} ${names[0]}と${names[1]}に告白の衝動を注入した`;
+        }
+        else if (itemId === 'discovery_up') msg = `${def.emoji} 発見率UPバフを発動（3日間）`;
+        else if (itemId === 'positive_buff') msg = `${def.emoji} ポジティブバフを発動（7日間）`;
+        else if (itemId === 'affection_bonus') msg = `${def.emoji} 好感度ボーナスを発動（7日間）`;
+        else if (itemId === 'harvest_prayer') {
+          const totalCivCount = civilizations.filter((c) => c.category !== 'demolish').length;
+          msg = `${def.emoji} 豊作祈願で${totalCivCount}Pの物理Pを獲得`;
+        }
+
+        addLog({
+          id: `${Date.now()}-item-${itemId}`,
+          timestamp: `Day${day} ${gameTime?.displayTime ?? ''}`,
+          npcName: '神の手',
+          npcEmoji: '🎒',
+          npcColor: '#5d4037',
+          think: msg,
+          isEvent: true,
+          source: 'program',
+        });
+      }
+    }
+  }, [consumeItem, addBuff, addForceConversation, addConfessionUrge, setNPCs, addLog, gameTime, unharvestedCount, npcs]);
 
   // NPC状態・ログの定期保存 + ブラウザ閉じ時 + タブ非表示時（iOS Safari対策）
   // refで最新値を保持し、intervalがリセットされないようにする
@@ -642,6 +930,8 @@ export default function App() {
       });
     },
     prayers, fulfillPrayer,
+    buffs, forceConversations, consumeForceConversation,
+    confessionUrges, consumeConfessionUrge,
   );
 
   // 移動シミュレーション（深夜は速度半減）
@@ -860,6 +1150,15 @@ export default function App() {
           </button>
           <button className={styles.btn} onClick={() => setShowGacha(true)}>
             <span className={styles.btnIcon}>{'\uD83C\uDFB0'}</span>召喚
+          </button>
+          <button className={styles.btn} onClick={() => setShowItemGacha(true)}>
+            <span className={styles.btnIcon}>{'\uD83C\uDF00'}</span>概念
+          </button>
+          <button className={styles.btn} onClick={() => setShowInventory(true)} style={{ position: 'relative' }}>
+            <span className={styles.btnIcon}>{'\uD83C\uDF92'}</span>持ち物
+            {Object.values(inventory).reduce((a, b) => a + b, 0) > 0 && (
+              <span className={styles.badge} />
+            )}
           </button>
           <button className={styles.btn} onClick={() => { setShowInfo(true); setHasNewInfo(false); }} style={{ position: 'relative' }}>
             <span className={styles.btnIcon}>{'\uD83D\uDCE2'}</span>お知らせ
@@ -1152,6 +1451,32 @@ export default function App() {
           }}
           onSpendPoints={spendPhysicalPoints}
           onClose={() => setShowGacha(false)}
+        />
+      )}
+
+      {/* 概念ガチャモーダル */}
+      {showItemGacha && (
+        <ItemGachaModal
+          conceptualPoints={civilizationPoints.conceptual}
+          onSpendPoints={spendConceptualPoints}
+          onAddItems={addItemsToInventory}
+          onClose={() => setShowItemGacha(false)}
+        />
+      )}
+
+      {/* インベントリモーダル */}
+      {showInventory && (
+        <InventoryModal
+          inventory={inventory}
+          npcs={npcs}
+          buffs={buffs}
+          currentDay={gameTime?.day ?? 1}
+          unharvestedCount={unharvestedCount}
+          totalCivCount={civilizations.filter((c) => c.category !== 'demolish').length}
+          forceConversations={forceConversations}
+          confessionUrges={confessionUrges}
+          onUseItem={handleUseItem}
+          onClose={() => setShowInventory(false)}
         />
       )}
 

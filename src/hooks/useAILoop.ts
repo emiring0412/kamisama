@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { NPC, LogEntry, VillageHistory, CivilizationItem, Whisper, Prayer } from '../types';
+import type { NPC, LogEntry, VillageHistory, CivilizationItem, Whisper, Prayer, Buff, ForceConversation, ConfessionUrge } from '../types';
 import type { GameTime } from './useGameClock';
 import { AI_INTERVAL_MS, MAX_CONCURRENT_REQUESTS, FACILITIES } from '../lib/constants';
 import { promoteToLongTermMemory, shouldAutoRecord, addToHistory } from '../lib/historySystem';
@@ -75,6 +75,11 @@ export function useAILoop(
   onBuildIntent?: (npcId: string, npcName: string, civEvent: { type: string; name: string; description: string }) => void,
   prayers?: Prayer[],
   fulfillPrayer?: (prayerId: string, day?: number) => void,
+  buffs?: Buff[],
+  forceConversations?: ForceConversation[],
+  consumeForceConversation?: () => void,
+  confessionUrges?: ConfessionUrge[],
+  consumeConfessionUrge?: (npcId1: string, npcId2: string) => void,
 ) {
   const npcsRef = useRef(npcs);
   const pausedRef = useRef(paused);
@@ -84,6 +89,9 @@ export function useAILoop(
   const civsRef = useRef(civilizations);
   const whisperRef = useRef(whisper);
   const prayersRef = useRef(prayers);
+  const buffsRef = useRef(buffs);
+  const forceConvsRef = useRef(forceConversations);
+  const confessionUrgesRef = useRef(confessionUrges);
   const activeRequests = useRef(0);
   // 処理中のNPC IDを追跡（重複リクエスト防止）
   const busyNPCs = useRef(new Set<string>());
@@ -111,6 +119,9 @@ export function useAILoop(
   useEffect(() => { civsRef.current = civilizations; }, [civilizations]);
   useEffect(() => { whisperRef.current = whisper; }, [whisper]);
   useEffect(() => { prayersRef.current = prayers; }, [prayers]);
+  useEffect(() => { buffsRef.current = buffs; }, [buffs]);
+  useEffect(() => { forceConvsRef.current = forceConversations; }, [forceConversations]);
+  useEffect(() => { confessionUrgesRef.current = confessionUrges; }, [confessionUrges]);
 
   // 吹き出し表示ヘルパー
   const showBubble = (npcId: string, text: string, type: 'say' | 'think', durationMs: number) => {
@@ -205,7 +216,7 @@ export function useAILoop(
     const allLtm = npcsRef.current.flatMap((n) => n.longTermMemory);
     const whisperMemCount = allLtm.filter((m) => m.includes('神の声') || m.includes('不思議な声') || m.includes('お告げ')).length;
     const whisperIntensity = allLtm.length > 0 ? Math.min(1, whisperMemCount / Math.max(10, allLtm.length) * 3) : 0;
-    const prompt = buildMonologuePrompt(npc, gameTimeRef.current, historyRef.current, civsRef.current ?? [], npcWhisper, useFallbackPrompt, whisperIntensity);
+    const prompt = buildMonologuePrompt(npc, gameTimeRef.current, historyRef.current, civsRef.current ?? [], npcWhisper, useFallbackPrompt, whisperIntensity, buffsRef.current);
     const { text: raw, source: aiSource, modelTag } = await callFrontAI(apiKey, useGemini, prompt, 2048);
     console.log(`[AI] 独白: ${npc.name} (${modelTag}${npcWhisper ? '+whisper' : ''})`, raw?.slice(0, 100));
     const data = parseAIResponse<MonologueResponse>(raw);
@@ -503,7 +514,12 @@ export function useAILoop(
 
   // 遭遇処理（会話ラリー）
   const processEncounter = async (a: NPC, b: NPC) => {
-    const prompt = buildEncounterPrompt(a, b, gameTimeRef.current, historyRef.current, civsRef.current ?? []);
+    // 告白ペアかどうかを会話開始時点でキャプチャ（setTimeout内でrefがズレる問題対策）
+    // 告白ペアかどうかを会話開始時点でキャプチャ
+    const isConfessionPair = (confessionUrgesRef.current ?? []).some(
+      (u) => (u.npcId1 === a.id && u.npcId2 === b.id) || (u.npcId1 === b.id && u.npcId2 === a.id)
+    );
+    const prompt = buildEncounterPrompt(a, b, gameTimeRef.current, historyRef.current, civsRef.current ?? [], buffsRef.current, confessionUrgesRef.current);
     const { text: raw, source: encSource, modelTag: encTag } = await callFrontAI(apiKey, geminiKey, prompt, 2048);
     let data = parseAIResponse<EncounterResponse>(raw);
 
@@ -538,11 +554,41 @@ export function useAILoop(
     // NPC状態更新（会話完了後）
     const updateDelay = queue.length * 1500;
     const day = gameTimeRef.current?.day ?? 1;
+    // 好感度ボーナスバフ判定（累積: スタック数×2）
+    const affectionStacks = buffsRef.current?.filter((b) => b.type === 'affection').length ?? 0;
+    const affectionBonus = affectionStacks * 2;
     const hasRelChange = !!(data.rel_change?.a_to_b?.score_delta || data.rel_change?.b_to_a?.score_delta);
     const aBelief = data.new_beliefs?.[a.name] || '';
     const bBelief = data.new_beliefs?.[b.name] || '';
     const aMoveDest = data.a_move_to ? resolveMoveTo(data.a_move_to, a) : null;
     const bMoveDest = data.b_move_to ? resolveMoveTo(data.b_move_to, b) : null;
+
+    // 恋愛系ラベル保護: 既に恋愛ラベルなら、AIが非恋愛ラベルを返しても上書きしない（好感度20未満で解消）
+    const LOVE_LABEL_WORDS = ['好意', '恋', '愛', '想い', '惹かれ', '特別', '大切', '好き'];
+    const MARRIAGE_LABEL_WORDS = ['夫婦', '伴侶', '妻', '夫', '連れ合い', '番'];
+    const BREAKUP_THRESHOLD = 20;
+
+    const resolveLabel = (existing: { label: string; score: number }, newLabel: string, newScore: number): string => {
+      const existingIsLove = LOVE_LABEL_WORDS.some((w) => existing.label.includes(w));
+      const existingIsMarriage = MARRIAGE_LABEL_WORDS.some((w) => existing.label.includes(w));
+      const newIsLove = LOVE_LABEL_WORDS.some((w) => newLabel.includes(w));
+      const newIsMarriage = MARRIAGE_LABEL_WORDS.some((w) => newLabel.includes(w));
+
+      // 夫婦ラベルは最優先で保護（好感度20未満で破局）
+      if (existingIsMarriage) {
+        if (newScore < BREAKUP_THRESHOLD) return newLabel || '元伴侶';
+        if (newIsMarriage) return newLabel;
+        return existing.label; // 非婚姻ラベルで上書きしない
+      }
+      // 恋愛ラベルも保護（好感度20未満で破局）
+      if (existingIsLove) {
+        if (newScore < BREAKUP_THRESHOLD) return newLabel || '知り合い';
+        if (newIsLove || newIsMarriage) return newLabel; // 恋愛→恋愛 or 恋愛→婚姻はOK
+        return existing.label; // 非恋愛ラベルで上書きしない
+      }
+      // それ以外は普通に更新
+      return newLabel || existing.label;
+    };
 
     setTimeout(() => {
       setNPCs((prev) => prev.map((n) => {
@@ -552,8 +598,9 @@ export function useAILoop(
           let newScore = 0;
           if (data.rel_change?.a_to_b) {
             const existing = rels[b.id] || { label: '', score: 0 };
-            newScore = Math.round(Math.max(-100, Math.min(100, existing.score + (data.rel_change.a_to_b.score_delta || 0))));
-            rels[b.id] = { label: data.rel_change.a_to_b.label || existing.label, score: newScore };
+            newScore = Math.round(Math.max(-100, Math.min(100, existing.score + (data.rel_change.a_to_b.score_delta || 0) + affectionBonus)));
+            const label = resolveLabel(existing, data.rel_change.a_to_b.label || '', newScore);
+            rels[b.id] = { label, score: newScore };
           }
           const newBeliefs = aBelief ? [...n.beliefs, aBelief].slice(-5) : n.beliefs;
           const aMoveUpdate = aMoveDest ? { targetX: aMoveDest.x, targetY: aMoveDest.y } : {};
@@ -567,8 +614,9 @@ export function useAILoop(
           let newScore = 0;
           if (data.rel_change?.b_to_a) {
             const existing = rels[a.id] || { label: '', score: 0 };
-            newScore = Math.round(Math.max(-100, Math.min(100, existing.score + (data.rel_change.b_to_a.score_delta || 0))));
-            rels[a.id] = { label: data.rel_change.b_to_a.label || existing.label, score: newScore };
+            newScore = Math.round(Math.max(-100, Math.min(100, existing.score + (data.rel_change.b_to_a.score_delta || 0) + affectionBonus)));
+            const label = resolveLabel(existing, data.rel_change.b_to_a.label || '', newScore);
+            rels[a.id] = { label, score: newScore };
           }
           const newBeliefs = bBelief ? [...n.beliefs, bBelief].slice(-5) : n.beliefs;
           const bMoveUpdate = bMoveDest ? { targetX: bMoveDest.x, targetY: bMoveDest.y } : {};
@@ -611,7 +659,57 @@ export function useAILoop(
           onBuildIntent(a.id, `${a.name}と${b.name}`, ce);
         }
       }
+
+      // 告白促進消費（開始時点でキャプチャした値を使用）
+      if (isConfessionPair) {
+        if (consumeConfessionUrge) consumeConfessionUrge(a.id, b.id);
+      }
     }, updateDelay);
+
+    // 告白リザルト表示（setNPCsと分離して少し遅延させる）
+    if (isConfessionPair) {
+      setTimeout(() => {
+        const LOVE_WORDS = ['好意', '恋', '愛', '想い', '惹かれ', '特別', '大切', '好き'];
+        const labelA = data.rel_change?.a_to_b?.label ?? '';
+        const labelB = data.rel_change?.b_to_a?.label ?? '';
+        const deltaA = data.rel_change?.a_to_b?.score_delta ?? 0;
+        const deltaB = data.rel_change?.b_to_a?.score_delta ?? 0;
+        const isLoveA = LOVE_WORDS.some((w) => labelA.includes(w));
+        const isLoveB = LOVE_WORDS.some((w) => labelB.includes(w));
+
+        let resultEmoji = '💕';
+        let resultMsg = '';
+        if (isLoveA && isLoveB) {
+          resultMsg = `${a.name}と${b.name}は恋人になった！`;
+          resultEmoji = '💘';
+        } else if (isLoveA || isLoveB) {
+          const lover = isLoveA ? a.name : b.name;
+          const other = isLoveA ? b.name : a.name;
+          resultMsg = `${lover}の想いは伝わった。${other}はまだ戸惑っているようだ…`;
+          resultEmoji = '💗';
+        } else if (deltaA > 0 || deltaB > 0) {
+          resultMsg = `${a.name}と${b.name}の間に良い雰囲気が流れた`;
+          resultEmoji = '✨';
+        } else if (deltaA < 0 || deltaB < 0) {
+          resultMsg = `告白はうまくいかなかったようだ…`;
+          resultEmoji = '💔';
+        } else {
+          resultMsg = `${a.name}と${b.name}の関係に大きな変化はなかった`;
+          resultEmoji = '🌙';
+        }
+
+        addLog({
+          id: `${Date.now()}-confession-result-${a.id}-${b.id}`,
+          timestamp: `Day${gameTimeRef.current?.day ?? 1} ${gameTimeRef.current?.displayTime ?? ''}`,
+          npcName: '告白の結果',
+          npcEmoji: resultEmoji,
+          npcColor: '#e91e63',
+          think: resultMsg,
+          isEvent: true,
+          source: 'program',
+        });
+      }, updateDelay + 500);
+    }
 
     // ログ（会話を1行ずつ分けて記録）
     const convLines = data.conversation.map((l) => {
@@ -698,9 +796,33 @@ export function useAILoop(
       // 深夜はほぼ活動停止（90%スキップ）
       if (isMidnight && Math.random() < 0.9) return;
 
+      // --- 強制会話キュー処理（最優先） ---
+      const forcePair = forceConvsRef.current?.[0];
+      if (forcePair && !dispatched) {
+        const fa = currentNPCs.find((nn) => nn.id === forcePair.npcId1);
+        const fb = currentNPCs.find((nn) => nn.id === forcePair.npcId2);
+        if (fa && fb && !busyNPCs.current.has(fa.id) && !busyNPCs.current.has(fb.id)) {
+          if (!shouldThrottle() && activeRequests.current < MAX_CONCURRENT_REQUESTS) {
+            busyNPCs.current.add(fa.id);
+            busyNPCs.current.add(fb.id);
+            activeRequests.current++;
+            setNPCs((prev) => prev.map((np) =>
+              np.id === fa.id || np.id === fb.id ? { ...np, isWaiting: true } : np
+            ));
+            processEncounter(fa, fb).finally(() => {
+              activeRequests.current--;
+              busyNPCs.current.delete(fa.id);
+              busyNPCs.current.delete(fb.id);
+            });
+            dispatched = true;
+            if (consumeForceConversation) consumeForceConversation();
+          }
+        }
+      }
+
       // --- 遭遇ペアを1つだけ探す（ささやき待ち時はスキップ） ---
       const n = currentNPCs.length;
-      if (!pendingWhisper) {
+      if (!pendingWhisper && !dispatched) {
       for (let offset = 0; offset < n * n && !dispatched; offset++) {
         const i = (roundRobinIdx.current + Math.floor(offset / n)) % n;
         const j = (i + 1 + (offset % (n - 1))) % n;

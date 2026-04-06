@@ -67,6 +67,35 @@ export interface NPC {
   rarity?: 'N' | 'R' | 'SR';    // ガチャレアリティ
 }
 
+// アイテム定義
+export interface ItemDef {
+  id: string;
+  name: string;
+  emoji: string;
+  rarity: 'N' | 'R';
+  description: string;
+  targetType: 'none' | 'npc1' | 'npc2'; // 使用時の対象選択
+}
+
+// バフ（期限付き効果）
+export interface Buff {
+  type: 'discovery_up' | 'positive' | 'affection' | 'cataclysm';
+  expiresDay: number;
+  description?: string; // 天変地異の詳細など
+}
+
+// 強制会話キュー
+export interface ForceConversation {
+  npcId1: string;
+  npcId2: string;
+}
+
+// 告白促進キュー
+export interface ConfessionUrge {
+  npcId1: string;
+  npcId2: string;
+}
+
 // 村の歴史: 過去の時代
 export interface PastEra {
   eraName: string;    // "黎明期"

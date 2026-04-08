@@ -20,6 +20,7 @@ export function useDailyEval(
   prayers?: Prayer[],
   setPrayers?: React.Dispatch<React.SetStateAction<Prayer[]>>,
   onDepartureCandidate?: (npc: NPC, reason: string) => void,
+  monogamy?: boolean,
 ) {
   const lastEvalDay = useRef(gameTime.day);
   const lastJobEvalDay = useRef(gameTime.day);
@@ -308,7 +309,7 @@ export function useDailyEval(
       }
 
       // 結婚判定（恋人同士が好感度30以上で夫婦にランクアップ）
-      const marriageResult = checkMarriage(alive);
+      const marriageResult = checkMarriage(alive, monogamy);
       if (marriageResult.marriages.length > 0) {
         for (let k = 0; k < alive.length; k++) {
           const mu = marriageResult.updated.find((u) => u.id === alive[k].id);

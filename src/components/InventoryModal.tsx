@@ -41,7 +41,6 @@ interface Props {
   npcs: NPC[];
   buffs: Buff[];
   currentDay: number;
-  unharvestedCount: number;
   totalCivCount: number;
   forceConversations: ForceConversation[];
   confessionUrges: ConfessionUrge[];
@@ -64,7 +63,7 @@ type SelectMode = null | {
   nameError?: string;
 };
 
-export default function InventoryModal({ inventory, npcs, buffs, currentDay, unharvestedCount, totalCivCount, forceConversations, confessionUrges, onUseItem, onClose }: Props) {
+export default function InventoryModal({ inventory, npcs, buffs, currentDay, totalCivCount, forceConversations, confessionUrges, onUseItem, onClose }: Props) {
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
   const [selectMode, setSelectMode] = useState<SelectMode>(null);
   const [resultMsg, setResultMsg] = useState<string | null>(null);

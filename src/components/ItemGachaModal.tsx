@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ItemDef } from '../types';
 import {
   ITEM_SINGLE_COST, ITEM_MULTI_COST, ITEM_MULTI_COUNT,
-  ITEM_R_RATE, N_ITEMS, R_ITEMS, ALL_ITEMS, rollItem,
+  N_ITEMS, R_ITEMS, rollItem,
 } from '../lib/itemGachaData';
 import styles from './ItemGachaModal.module.css';
 

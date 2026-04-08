@@ -148,6 +148,12 @@ export default function App() {
   // 告白促進キュー
   const [confessionUrges, setConfessionUrges] = useState<ConfessionUrge[]>([]);
 
+  // 一夫一婦制フラグ（文明発展で動的にtrueになる）
+  const [monogamyEnabled, setMonogamyEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('kamisama_monogamy');
+    return saved === 'true';
+  });
+
   const [departureCandidate, setDepartureCandidate] = useState<{ npc: NPC; reason: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showOfuse, setShowOfuse] = useState(false);
@@ -334,6 +340,31 @@ export default function App() {
 
   // 未収穫アイテム数（豊作祈願用）
   const unharvestedCount = civilizations.filter((c) => !harvestedIds.has(c.id) && c.category !== 'demolish').length;
+
+  // 一夫一婦制の動的検出（rule/beliefカテゴリに婚姻法系キーワードがあれば有効化）
+  useEffect(() => {
+    if (monogamyEnabled) return; // 既に有効なら再検出不要
+    const MONOGAMY_KEYWORDS = ['一夫一婦', '一夫一妻', '婚姻の掟', '婚姻法', '結婚の掟', '貞操', '浮気禁止', '一人の伴侶', '純愛の誓い'];
+    const hasMonogamyRule = civilizations.some(
+      (c) => (c.category === 'rule' || c.category === 'belief') &&
+             c.status === 'adopted' &&
+             MONOGAMY_KEYWORDS.some((kw) => c.name.includes(kw) || c.description.includes(kw))
+    );
+    if (hasMonogamyRule) {
+      setMonogamyEnabled(true);
+      localStorage.setItem('kamisama_monogamy', 'true');
+      addLog({
+        id: `${Date.now()}-monogamy`,
+        timestamp: `Day${gameTime?.day ?? 1} ${gameTime?.displayTime ?? ''}`,
+        npcName: '文明の変化',
+        npcEmoji: '⚖️',
+        npcColor: '#5d4037',
+        think: '一夫一婦の掟が村に根付いた。これより複数の伴侶を持つことは許されない。',
+        isEvent: true,
+        source: 'program',
+      });
+    }
+  }, [civilizations, monogamyEnabled]);
 
   const [mapScale, setMapScale] = useState(1);
 
@@ -940,7 +971,7 @@ export default function App() {
 
   // 定期評価（パラメータ変動・職業変化）
   useDailyEval(npcs, setNPCs, addLog, gameTime, apiKey ?? '', paused, setVillageHistory, demolishFacility, prayers, setPrayers,
-    (npc, reason) => setDepartureCandidate({ npc, reason }));
+    (npc, reason) => setDepartureCandidate({ npc, reason }), monogamyEnabled);
 
   // 建築進捗（日次 — 経過日数に基づいて一括進捗）
   const buildDayRef = useRef(gameTime.day);
@@ -1471,7 +1502,6 @@ export default function App() {
           npcs={npcs}
           buffs={buffs}
           currentDay={gameTime?.day ?? 1}
-          unharvestedCount={unharvestedCount}
           totalCivCount={civilizations.filter((c) => c.category !== 'demolish').length}
           forceConversations={forceConversations}
           confessionUrges={confessionUrges}

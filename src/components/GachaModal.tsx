@@ -207,15 +207,6 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
     if (!canMulti) return;
     onSpendPoints(MULTI_COST);
     const batch = Array.from({ length: MULTI_COUNT }, () => rollOne(true));
-    // デバッグ: 10連にSRが無ければ1枠をSR確定にする
-    if (SR_TEMPLATES.length > 0 && !batch.some((r) => r.rarity === 'SR')) {
-      const idx = Math.floor(Math.random() * MULTI_COUNT);
-      const tmpl = randomFrom(SR_TEMPLATES);
-      const g = tmpl.genderLock ?? (Math.random() < 0.5 ? 'male' : 'female');
-      const npc = buildNPC(g, tmpl.role, tmpl.personality, jitterRParams(tmpl.params), existingNames);
-      npc.rarity = 'SR';
-      batch[idx] = { npc, rarity: 'SR', template: tmpl };
-    }
     setMultiResults(batch);
     setLitCount(0);
     setRevealIndex(-1);
@@ -518,8 +509,7 @@ export default function GachaModal({ existingNames, physicalPoints, onAdd, onSpe
           <div className={styles.infoNote}>
             {SR_TEMPLATES.length > 0
               ? <>
-                  {'\u2728'} <strong>4/8終日まで10連でSR1体確定！</strong><br/>
-                  SR率: 単発{Math.round(getSRRate(false) * 100)}% / 10連{Math.round(getSRRate(true) * 100)}%<br/>
+                  {'\u2728'} SR率: 単発{Math.round(getSRRate(false) * 100)}% / 10連{Math.round(getSRRate(true) * 100)}%<br/>
                   現在排出中SR: {SR_TEMPLATES.map((t) => t.label).join('、')}
                 </>
               : '\u2728 現在はN・Rのみ排出されます。SRが出現する特別な期間が訪れることがあります。'}
